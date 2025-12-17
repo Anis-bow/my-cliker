@@ -21,7 +21,6 @@
         .modal-content { background: white; width: 90%; max-width: 400px; border-radius: 25px; padding: 20px; position: relative; max-height: 75vh; display: flex; flex-direction: column; }
         .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.8rem; cursor: pointer; color: #ccc; }
         
-        /* Стили чата с кнопкой удаления */
         #chat-messages { flex: 1; overflow-y: auto; margin: 10px 0; font-size: 0.9rem; display: flex; flex-direction: column; gap: 8px; }
         .chat-row { padding: 8px 12px; background: #f1f3f5; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; animation: fadeIn 0.3s; }
         .chat-text { flex: 1; margin-right: 10px; word-break: break-word; }
@@ -96,6 +95,24 @@
         }
         updateUI();
 
+        // НОВАЯ ФУНКЦИЯ: Слушаем админку
+        async function listenToMyStats() {
+            try {
+                const res = await fetch(`${DB_URL}/players/${userName}.json`);
+                const data = await res.json();
+                if (data) {
+                    // Если в базе значение отличается от того что в игре - обновляем
+                    if (data.score !== count || data.power !== power) {
+                        count = data.score;
+                        power = data.power;
+                        updateUI();
+                        localStorage.setItem('p_coins', count);
+                        localStorage.setItem('p_power', power);
+                    }
+                }
+            } catch (e) { console.error("Ошибка синхронизации"); }
+        }
+
         function changeName() {
             let newName = prompt("Введите новый ник:", userName);
             if (newName && newName.trim() !== "" && newName !== userName) {
@@ -143,7 +160,6 @@
             } else { alert("Нужно " + cost + " монет!"); }
         }
 
-        // --- ЛОГИКА ЧАТА ---
         async function sendMessage(t) {
             const inp = document.getElementById('chat-input');
             const msg = t || inp.value;
@@ -154,7 +170,6 @@
         }
         document.getElementById('send-btn').onclick = () => sendMessage();
 
-        // УДАЛЕНИЕ СООБЩЕНИЯ
         async function deleteMessage(msgId) {
             if(confirm("Удалить это сообщение для всех?")) {
                 await fetch(`${DB_URL}/chat/${msgId}.json`, { method: 'DELETE' });
@@ -168,16 +183,12 @@
             const box = document.getElementById('chat-messages');
             if(!data) { box.innerHTML = "Сообщений нет"; return; }
             box.innerHTML = '';
-            
-            // В Firebase ключи (msgId) важны для удаления
             Object.keys(data).forEach(id => {
                 const m = data[id];
                 const row = document.createElement('div');
                 row.className = 'chat-row';
-                row.innerHTML = `
-                    <div class="chat-text"><b>${m.user}:</b> ${m.text}</div>
-                    <button class="del-msg-btn" onclick="deleteMessage('${id}')">❌</button>
-                `;
+                row.innerHTML = `<div class="chat-text"><b>${m.user}:</b> ${m.text}</div>
+                                 <button class="del-msg-btn" onclick="deleteMessage('${id}')">❌</button>`;
                 box.appendChild(row);
             });
             box.scrollTop = box.scrollHeight;
@@ -192,12 +203,12 @@
             box.innerHTML = sorted.map((p,i)=>`<div class="player-row" style="${p[0] === userName ? 'color:blue; font-weight:bold;' : ''}"><span>${i+1}. ${p[0]}</span><b>${p[1].score}</b></div>`).join('');
         }
 
+        // Интервал теперь еще и проверяет ваши статы в базе каждые 2 секунды
         setInterval(() => {
+            listenToMyStats(); 
             if(document.getElementById('modal-chat').style.display === 'flex') loadChat();
             if(document.getElementById('modal-top').style.display === 'flex') loadLB();
-        }, 5000);
+        }, 2000);
     </script>
 </body>
-
 </html>
-
