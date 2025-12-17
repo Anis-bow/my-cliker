@@ -18,21 +18,27 @@
         .shake-anim { animation: shake 0.1s; }
 
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(4px); }
-        .modal-content { background: white; width: 90%; max-width: 400px; border-radius: 25px; padding: 20px; position: relative; max-height: 80vh; display: flex; flex-direction: column; overflow-y: auto; }
+        .modal-content { background: white; width: 90%; max-width: 400px; border-radius: 25px; padding: 20px; position: relative; max-height: 80vh; display: flex; flex-direction: column; }
         .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.8rem; cursor: pointer; color: #ccc; z-index: 10; }
         
+        /* Стили чата */
+        #chat-content { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; border: 1px solid #eee; border-radius: 15px; margin-bottom: 10px; min-height: 200px; }
+        .msg { background: #f1f3f5; padding: 8px 12px; border-radius: 12px; max-width: 85%; align-self: flex-start; }
+        .msg.my { background: #3498db; color: white; align-self: flex-end; }
+        .msg b { font-size: 0.75rem; display: block; margin-bottom: 2px; opacity: 0.8; }
+        .chat-input-area { display: flex; gap: 5px; }
+        #chat-input { flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #ddd; outline: none; }
+        #send-btn { background: #3498db; color: white; border: none; padding: 10px; border-radius: 10px; cursor: pointer; }
+
         .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 10px; }
         .shop-item { background: #f8f9fa; padding: 10px; border-radius: 15px; text-align: center; border: 1px solid #eee; }
-        .shop-item img { width: 70px; height: 70px; object-fit: contain; margin-bottom: 5px; }
-        .shop-item h4 { margin: 5px 0; font-size: 0.9rem; }
-        .shop-item p { margin: 0 0 10px; color: #e67e22; font-weight: bold; font-size: 0.8rem; }
-        .buy-btn { background: #27ae60; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; width: 100%; }
+        .shop-item img { width: 60px; height: 60px; object-fit: contain; }
+        .buy-btn { background: #27ae60; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; width: 100%; }
 
-        .player-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; align-items: center; }
-        .lvl-badge { background: #f39c12; color: white; padding: 2px 6px; border-radius: 5px; font-size: 0.7rem; margin-left: 5px; }
+        .player-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
         
         nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: white; display: flex; border-top: 1px solid #eee; z-index: 50; }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; color: #adb5bd; cursor: pointer; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: bold; color: #adb5bd; cursor: pointer; }
         .active { color: #3498db; }
     </style>
 </head>
@@ -41,7 +47,7 @@
     <div id="ui-top">
         <div id="score-container"><span id="coins">0</span>💵</div>
         <div id="power-info">Сила: <span id="current-power">1</span> / 5</div>
-        <div id="user-info" onclick="changeName()">Ник: <span id="display-name">...</span> (изменить)</div>
+        <div id="user-info" onclick="changeName()">Ник: <span id="display-name">...</span></div>
     </div>
 
     <div id="game-area">
@@ -49,47 +55,42 @@
     </div>
 
     <div id="modal-top" class="modal">
-        <div class="modal-content">
+        <div class="modal-content" style="overflow-y: auto;">
             <span class="close-btn" onclick="closeModals()">×</span>
             <h2>👥 ТОП ИГРОКОВ</h2>
             <div id="lb-content">Загрузка...</div>
         </div>
     </div>
 
+    <div id="modal-chat" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModals()">×</span>
+            <h2>💬 ОБЩИЙ ЧАТ</h2>
+            <div id="chat-content">Загрузка сообщений...</div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Напиши сообщение...">
+                <button id="send-btn" onclick="sendMsg()">➤</button>
+            </div>
+        </div>
+    </div>
+
     <div id="modal-shop" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModals()">×</span>
-            <h2>🎁 ОБМЕН ПОДАРКОВ</h2>
+            <h2>🎁 ОБМЕН</h2>
             <div class="shop-grid">
-                <div class="shop-item">
-                    <img src="png-transparent-emojipedia-heart-ribbon-emoticon-emoji-love-ribbon-heart.png">
-                    <h4>Сердечко</h4><p>20,000 💵</p>
-                    <button class="buy-btn" onclick="exchangeGift('Сердечко', 20000)">Обменять</button>
-                </div>
-                <div class="shop-item">
-                    <img src="i (5).webp">
-                    <h4>Мишка</h4><p>20,000 💵</p>
-                    <button class="buy-btn" onclick="exchangeGift('Мишка', 20000)">Обменять</button>
-                </div>
-                <div class="shop-item">
-                    <img src="538e404bde2a5b9680bf486cdc6ea4b4.jpg">
-                    <h4>Роза</h4><p>35,000 💵</p>
-                    <button class="buy-btn" onclick="exchangeGift('Роза', 35000)">Обменять</button>
-                </div>
-                <div class="shop-item">
-                    <img src="default.png">
-                    <h4>Подарок</h4><p>35,000 💵</p>
-                    <button class="buy-btn" onclick="exchangeGift('Подарок', 35000)">Обменять</button>
-                </div>
+                <div class="shop-item"><img src="i (5).webp"><h4>Мишка</h4><button class="buy-btn" onclick="exchangeGift('Мишка', 20000)">20k</button></div>
+                <div class="shop-item"><img src="538e404bde2a5b9680bf486cdc6ea4b4.jpg"><h4>Роза</h4><button class="buy-btn" onclick="exchangeGift('Роза', 35000)">35k</button></div>
             </div>
         </div>
     </div>
 
     <nav>
         <div class="nav-item active" id="nav-home" onclick="closeModals()">🏠<br>ГЛАВНАЯ</div>
-        <div class="nav-item" id="nav-top" onclick="openModal('modal-top')">👥<br>ИГРОКИ</div>
+        <div class="nav-item" id="nav-top" onclick="openModal('modal-top')">👥<br>ТОП</div>
+        <div class="nav-item" id="nav-chat" onclick="openModal('modal-chat')">💬<br>ЧАТ</div>
         <div class="nav-item" id="nav-shop" onclick="openModal('modal-shop')">🎁<br>ОБМЕН</div>
-        <div class="nav-item" id="boost-nav-btn" onclick="buyBoost()" style="color: #f39c12;">⚡<br><b id="boost-label">100</b></div>
+        <div class="nav-item" onclick="buyBoost()" style="color: #f39c12;">⚡<br><b id="boost-label">100</b></div>
     </nav>
 
     <script>
@@ -99,32 +100,18 @@
         
         let count = parseInt(localStorage.getItem('p_coins')) || 0;
         let power = parseInt(localStorage.getItem('p_power')) || 1;
-
         const boostPrices = [0, 100, 500, 1000, 1500, 2000];
 
         function updateUI() {
             document.getElementById('coins').innerText = count.toLocaleString();
             document.getElementById('current-power').innerText = power;
             document.getElementById('display-name').innerText = userName;
-            
-            const boostLabel = document.getElementById('boost-label');
-            const boostNav = document.getElementById('boost-nav-btn');
-
-            // ТЕПЕРЬ ПРОВЕРКА ИДЕТ КАЖДЫЙ РАЗ ПРИ ОБНОВЛЕНИИ ЭКРАНА
-            if (power >= 5) {
-                boostLabel.innerText = "MAX";
-                boostNav.style.opacity = "0.5";
-            } else {
-                boostLabel.innerText = boostPrices[power] || 2000;
-                boostNav.style.opacity = "1";
-            }
+            const bLabel = document.getElementById('boost-label');
+            bLabel.innerText = power >= 5 ? "MAX" : boostPrices[power];
         }
 
         async function sync() { 
-            await fetch(`${DB_URL}/players/${userName}.json`, { 
-                method: 'PUT', 
-                body: JSON.stringify({ score: count, power: power }) 
-            }); 
+            await fetch(`${DB_URL}/players/${userName}.json`, { method: 'PUT', body: JSON.stringify({ score: count, power: power }) }); 
         }
 
         async function fetchServerData() {
@@ -132,104 +119,91 @@
                 const res = await fetch(`${DB_URL}/players/${userName}.json`);
                 const data = await res.json();
                 if (data) {
-                    // Исправляем и счет, и лвл сразу, если они изменились в Firebase
-                    let changed = false;
-                    if (data.score !== undefined && data.score !== count) {
-                        count = data.score;
-                        changed = true;
-                    }
-                    if (data.power !== undefined && data.power !== power) {
-                        power = data.power;
-                        changed = true;
-                    }
-
-                    if (changed) {
+                    if (data.score !== count || data.power !== power) {
+                        count = data.score || 0; power = data.power || 1;
                         updateUI();
-                        localStorage.setItem('p_coins', count);
-                        localStorage.setItem('p_power', power);
+                        localStorage.setItem('p_coins', count); localStorage.setItem('p_power', power);
                     }
                 }
             } catch(e) {}
         }
 
         document.getElementById('click-btn').onclick = () => {
-            count += power;
-            updateUI();
-            localStorage.setItem('p_coins', count);
+            count += power; updateUI(); localStorage.setItem('p_coins', count);
             const btn = document.getElementById('click-btn');
             btn.classList.remove('shake-anim'); void btn.offsetWidth; btn.classList.add('shake-anim');
             sync();
         };
 
         function buyBoost() {
-            if (power >= 5) {
-                alert("Максимальный уровень!");
-                return;
-            }
+            if (power >= 5) return;
             let cost = boostPrices[power];
             if (count >= cost) {
-                count -= cost;
-                power++;
-                updateUI();
-                localStorage.setItem('p_coins', count);
-                localStorage.setItem('p_power', power);
+                count -= cost; power++; updateUI();
+                localStorage.setItem('p_coins', count); localStorage.setItem('p_power', power);
                 sync();
-            } else {
-                alert("Нужно монет: " + cost);
-            }
+            } else { alert("Мало монет!"); }
         }
 
-        async function exchangeGift(name, price) {
-            if (count < price) { alert("Недостаточно!"); return; }
-            let tg = prompt("Твой Telegram:");
-            if (!tg) return;
-            count -= price; updateUI(); sync();
-            await fetch(`${DB_URL}/orders.json`, { method: 'POST', body: JSON.stringify({user: userName, tg: tg, gift: name, time: Date.now()}) });
-            alert("Отправлено!");
+        // --- ЛОГИКА ЧАТА ---
+        async function sendMsg() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+            input.value = '';
+            await fetch(`${DB_URL}/chat.json`, { 
+                method: 'POST', 
+                body: JSON.stringify({ user: userName, msg: text, time: Date.now() }) 
+            });
+            loadChat();
+        }
+
+        async function loadChat() {
+            try {
+                const res = await fetch(`${DB_URL}/chat.json?orderBy="time"&limitToLast=20`);
+                const data = await res.json();
+                const box = document.getElementById('chat-content');
+                if (!data) { box.innerHTML = "Сообщений нет"; return; }
+                box.innerHTML = '';
+                Object.values(data).sort((a,b)=>a.time-b.time).forEach(m => {
+                    const isMy = m.user === userName;
+                    box.innerHTML += `<div class="msg ${isMy?'my':''}"><b>${m.user}</b>${m.msg}</div>`;
+                });
+                box.scrollTop = box.scrollHeight;
+            } catch(e) {}
         }
 
         function openModal(id) { 
-            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            closeModals();
             document.getElementById(id).style.display = 'flex'; 
-            if(id === 'modal-top') {
-                document.getElementById('nav-top').classList.add('active');
-                loadLB();
-            }
-            if(id === 'modal-shop') document.getElementById('nav-shop').classList.add('active');
+            document.getElementById('nav-'+id.split('-')[1]).classList.add('active');
+            if(id === 'modal-top') loadLB(); 
+            if(id === 'modal-chat') loadChat();
         }
 
         function closeModals() { 
-            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); 
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             document.getElementById('nav-home').classList.add('active');
-            updateUI(); 
-        }
-
-        function changeName() {
-            let n = prompt("Новый ник:", userName);
-            if(n) { userName = n; localStorage.setItem('p_name', n); updateUI(); sync(); }
+            updateUI();
         }
 
         async function loadLB() {
             const res = await fetch(`${DB_URL}/players.json`);
             const data = await res.json();
-            const box = document.getElementById('lb-content');
-            box.innerHTML = '';
+            const box = document.getElementById('lb-content'); box.innerHTML = '';
             if(!data) return;
-            const sorted = Object.entries(data).sort((a,b)=>b[1].score-a[1].score).slice(0,15);
-            sorted.forEach((p, i) => {
+            Object.entries(data).sort((a,b)=>b[1].score-a[1].score).slice(0,10).forEach((p, i) => {
                 box.innerHTML += `<div class="player-row" style="${p[0]===userName?'color:#3498db;font-weight:bold':''}">
-                    <span>${i+1}. ${p[0]} (LVL ${p[1].power||1})</span>
-                    <b>${(p[1].score || 0).toLocaleString()} 💵</b></div>`;
+                    <span>${i+1}. ${p[0]} (LVL ${p[1].power})</span><b>${p[1].score.toLocaleString()}</b></div>`;
             });
         }
 
         updateUI();
-        setInterval(fetchServerData, 1500); 
+        setInterval(fetchServerData, 2000);
         setInterval(() => {
-            if(document.getElementById('modal-top').style.display === 'flex') loadLB();
-        }, 5000);
+            if(document.getElementById('modal-chat').style.display === 'flex') loadChat();
+        }, 2000);
     </script>
 </body>
 </html>
