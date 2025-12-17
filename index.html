@@ -33,14 +33,16 @@
         
         /* Эффект вылетающих цифр */
         .click-particle {
-            position: absolute; color: var(--primary); font-weight: bold; font-size: 1.5rem;
+            position: absolute; color: var(--primary); font-weight: bold; font-size: 1.8rem;
             pointer-events: none; animation: floatUp 0.8s forwards; z-index: 100;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
         }
 
         #click-btn { 
             width: 240px; height: 240px; border-radius: 50%; border: 10px solid var(--glass); 
             box-shadow: 0 0 50px rgba(52, 152, 219, 0.2); cursor: pointer; object-fit: cover; 
             transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            touch-action: manipulation;
         }
         #click-btn:active { transform: scale(0.9); }
 
@@ -67,12 +69,11 @@
             background: var(--glass); padding: 15px; border-radius: 20px; text-align: center; 
             transition: 0.3s; border: 1px solid transparent;
         }
-        .shop-item:hover { border-color: var(--primary); transform: translateY(-3px); }
-        .shop-item img { width: 70px; height: 70px; margin-bottom: 10px; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3)); }
+        .shop-item img { width: 70px; height: 70px; margin-bottom: 10px; pointer-events: none; }
         .buy-btn { 
             background: linear-gradient(135deg, var(--secondary), #27ae60); color: white; 
             border: none; padding: 10px; border-radius: 12px; cursor: pointer; width: 100%; 
-            font-weight: bold; margin-top: 10px; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+            font-weight: bold; margin-top: 10px;
         }
 
         /* Навигация */
@@ -80,17 +81,15 @@
             position: fixed; bottom: 20px; width: 90%; max-width: 400px; height: 70px; 
             background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(15px);
             display: flex; border-radius: 25px; border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 50;
+            z-index: 50;
         }
         .nav-item { 
             flex: 1; display: flex; flex-direction: column; align-items: center; 
-            justify-content: center; font-size: 0.7rem; font-weight: bold; color: #64748b; transition: 0.3s;
+            justify-content: center; font-size: 0.7rem; font-weight: bold; color: #64748b; 
         }
-        .nav-item.active { color: var(--primary); transform: translateY(-5px); }
-        .nav-item b { font-size: 1.1rem; }
+        .nav-item.active { color: var(--primary); }
 
-        /* Анимации */
-        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-100px); } }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-120px); } }
         @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
@@ -115,7 +114,7 @@
             <h2 style="text-align:center">💬 Global Chat</h2>
             <div id="chat-content"></div>
             <div style="display:flex; gap:10px; margin-top:15px;">
-                <input type="text" id="chat-input" placeholder="Say something..." style="flex:1; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:white; padding:12px; border-radius:15px; outline:none;">
+                <input type="text" id="chat-input" placeholder="Say something..." style="flex:1; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:white; padding:12px; border-radius:15px; outline:none; -webkit-user-select: text; user-select: text;">
                 <button onclick="sendMsg()" style="background:var(--primary); border:none; width:50px; border-radius:15px; color:white; font-size:1.2rem; cursor:pointer">➤</button>
             </div>
         </div>
@@ -139,7 +138,7 @@
         <div class="nav-item" id="nav-top" onclick="openModal('modal-top')">🏆<br>TOP</div>
         <div class="nav-item" id="nav-chat" onclick="openModal('modal-chat')">💬<br>CHAT</div>
         <div class="nav-item" id="nav-shop" onclick="openModal('modal-shop')">🎁<br>SHOP</div>
-        <div class="nav-item" onclick="buyBoost()" style="color: var(--accent);">⚡<br><b id="boost-label">100</b></div>
+        <div class="nav-item" id="boost-nav" onclick="buyBoost()" style="color: var(--accent);">⚡<br><b id="boost-label">100</b></div>
     </nav>
 
     <script>
@@ -159,27 +158,42 @@
             document.getElementById('boost-label').innerText = power >= 5 ? "MAX" : boostPrices[power];
         }
 
-        function createParticle(e) {
+        // КЛИК ФУНКЦИЯ
+        function handleAction(e) {
+            e.preventDefault();
+            count += power;
+            needsSync = true;
+            updateUI();
+
+            // Создаем эффект +X
             const particle = document.createElement('div');
             particle.className = 'click-particle';
             particle.innerText = `+${power}`;
-            particle.style.left = `${e.clientX || e.touches[0].clientX}px`;
-            particle.style.top = `${e.clientY || e.touches[0].clientY}px`;
+            
+            // Определяем координаты (мышь или тач)
+            let x = e.clientX || (e.touches ? e.touches[0].clientX : e.pageX);
+            let y = e.clientY || (e.touches ? e.touches[0].clientY : e.pageY);
+            
+            particle.style.left = `${x}px`;
+            particle.style.top = `${y}px`;
             document.body.appendChild(particle);
             setTimeout(() => particle.remove(), 800);
         }
 
-        document.getElementById('click-btn').addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            count += power; needsSync = true;
-            updateUI();
-            createParticle(e);
-        });
+        // Слушаем и клики и тачи
+        const btn = document.getElementById('click-btn');
+        btn.addEventListener('touchstart', handleAction, {passive: false});
+        btn.addEventListener('mousedown', (e) => { if(e.button === 0) handleAction(e); });
 
         async function sync() {
             if(!needsSync) return;
-            await fetch(`${DB_URL}/players/${userName}.json`, { method: 'PUT', body: JSON.stringify({ score: count, power: power }) });
-            needsSync = false;
+            try {
+                await fetch(`${DB_URL}/players/${userName}.json`, { 
+                    method: 'PUT', 
+                    body: JSON.stringify({ score: count, power: power }) 
+                });
+                needsSync = false;
+            } catch(e) {}
         }
 
         function buyBoost() {
@@ -189,14 +203,24 @@
             } else { alert("Not enough coins!"); }
         }
 
+        async function exchangeGift(name, price) {
+            if (count < price) { alert("Need more coins!"); return; }
+            let tg = prompt("Telegram (@nick):");
+            if (!tg) return;
+            count -= price; needsSync = true; updateUI();
+            await fetch(`${DB_URL}/orders.json`, { method: 'POST', body: JSON.stringify({user: userName, tg: tg, gift: name, time: Date.now()}) });
+            alert("Order sent!");
+        }
+
         async function loadLB() {
             const res = await fetch(`${DB_URL}/players.json`);
             const data = await res.json();
             const box = document.getElementById('lb-content'); box.innerHTML = '';
-            Object.entries(data).sort((a,b) => b[1].score - a[1].score).slice(0,10).forEach((p, i) => {
+            if(!data) return;
+            Object.entries(data).sort((a,b) => (b[1].score||0) - (a[1].score||0)).slice(0,10).forEach((p, i) => {
                 box.innerHTML += `<div style="display:flex; justify-content:space-between; padding:12px; background:rgba(255,255,255,0.05); border-radius:15px; margin-bottom:8px;">
-                    <span><b>${i+1}.</b> ${p[0]} <small style="color:var(--primary)">(LVL ${p[1].power})</small></span>
-                    <b>${p[1].score.toLocaleString()}</b></div>`;
+                    <span><b>${i+1}.</b> ${p[0]} <small style="color:var(--primary)">(Lvl ${p[1].power || 1})</small></span>
+                    <b>${(p[1].score || 0).toLocaleString()}</b></div>`;
             });
         }
 
@@ -211,6 +235,7 @@
             const res = await fetch(`${DB_URL}/chat.json`);
             const data = await res.json();
             const box = document.getElementById('chat-content'); box.innerHTML = '';
+            if(!data) return;
             Object.values(data).sort((a,b) => a.time - b.time).slice(-30).forEach(m => {
                 const my = m.user === userName;
                 box.innerHTML += `<div style="padding:10px; border-radius:15px; margin-bottom:8px; max-width:80%; align-self:${my?'flex-end':'flex-start'}; background:${my?'var(--primary)':'rgba(255,255,255,0.1)'}">
@@ -222,7 +247,9 @@
         function openModal(id) {
             closeModals();
             document.getElementById(id).style.display = 'flex';
-            document.getElementById('nav-'+id.split('-')[1]).classList.add('active');
+            const navId = id.replace('modal-', '');
+            const navElem = document.getElementById('nav-' + navId) || document.getElementById('boost-nav');
+            if(navElem) navElem.classList.add('active');
             if(id === 'modal-top') loadLB();
             if(id === 'modal-chat') loadChat();
         }
@@ -234,7 +261,7 @@
         }
 
         function changeName() {
-            let n = prompt("Change name:", userName);
+            let n = prompt("New name:", userName);
             if(n) { userName = n; localStorage.setItem('p_name', n); needsSync = true; updateUI(); }
         }
 
