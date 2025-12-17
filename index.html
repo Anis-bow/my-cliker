@@ -21,10 +21,9 @@
         .modal-content { background: white; width: 90%; max-width: 400px; border-radius: 25px; padding: 20px; position: relative; max-height: 80vh; display: flex; flex-direction: column; overflow-y: auto; }
         .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.8rem; cursor: pointer; color: #ccc; z-index: 10; }
         
-        /* Сетка магазина */
         .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 10px; }
         .shop-item { background: #f8f9fa; padding: 10px; border-radius: 15px; text-align: center; border: 1px solid #eee; }
-        .shop-item img { width: 60px; height: 60px; object-fit: contain; margin-bottom: 5px; }
+        .shop-item img { width: 70px; height: 70px; object-fit: contain; margin-bottom: 5px; }
         .shop-item h4 { margin: 5px 0; font-size: 0.9rem; }
         .shop-item p { margin: 0 0 10px; color: #e67e22; font-weight: bold; font-size: 0.8rem; }
         .buy-btn { background: #27ae60; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; width: 100%; }
@@ -63,22 +62,22 @@
             <h2>🎁 ОБМЕН ПОДАРКОВ</h2>
             <div class="shop-grid">
                 <div class="shop-item">
-                    <img src="https://cdn-icons-png.flaticon.com/512/2589/2589175.png">
+                    <img src="png-transparent-emojipedia-heart-ribbon-emoticon-emoji-love-ribbon-heart.png">
                     <h4>Сердечко</h4><p>20,000 💵</p>
                     <button class="buy-btn" onclick="exchangeGift('Сердечко', 20000)">Обменять</button>
                 </div>
                 <div class="shop-item">
-                    <img src="https://cdn-icons-png.flaticon.com/512/3069/3069172.png">
+                    <img src="i (5).webp">
                     <h4>Мишка</h4><p>20,000 💵</p>
                     <button class="buy-btn" onclick="exchangeGift('Мишка', 20000)">Обменять</button>
                 </div>
                 <div class="shop-item">
-                    <img src="https://cdn-icons-png.flaticon.com/512/3405/3405777.png">
+                    <img src="538e404bde2a5b9680bf486cdc6ea4b4.jpg">
                     <h4>Роза</h4><p>35,000 💵</p>
                     <button class="buy-btn" onclick="exchangeGift('Роза', 35000)">Обменять</button>
                 </div>
                 <div class="shop-item">
-                    <img src="https://cdn-icons-png.flaticon.com/512/4213/4213958.png">
+                    <img src="default.png">
                     <h4>Подарок</h4><p>35,000 💵</p>
                     <button class="buy-btn" onclick="exchangeGift('Подарок', 35000)">Обменять</button>
                 </div>
@@ -87,9 +86,9 @@
     </div>
 
     <nav>
-        <div class="nav-item active" onclick="closeModals()">🏠<br>ГЛАВНАЯ</div>
-        <div class="nav-item" onclick="openModal('modal-top')">👥<br>ИГРОКИ</div>
-        <div class="nav-item" onclick="openModal('modal-shop')">🎁<br>ОБМЕН</div>
+        <div class="nav-item active" id="nav-home" onclick="closeModals()">🏠<br>ГЛАВНАЯ</div>
+        <div class="nav-item" id="nav-top" onclick="openModal('modal-top')">👥<br>ИГРОКИ</div>
+        <div class="nav-item" id="nav-shop" onclick="openModal('modal-shop')">🎁<br>ОБМЕН</div>
         <div class="nav-item" onclick="buyBoost()" style="color: #f39c12;">⚡<br><b id="boost-label">100</b></div>
     </nav>
 
@@ -108,7 +107,6 @@
             document.getElementById('boost-label').innerText = Math.pow(2, power - 1) * 100;
         }
 
-        // Синхронизация: ОТПРАВИТЬ
         async function sync() { 
             await fetch(`${DB_URL}/players/${userName}.json`, { 
                 method: 'PUT', 
@@ -116,13 +114,13 @@
             }); 
         }
 
-        // Синхронизация: ПОЛУЧИТЬ (чтобы числа совпадали везде)
+        // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Синхронизация с сервером каждые 1.5 сек
         async function fetchServerData() {
             try {
                 const res = await fetch(`${DB_URL}/players/${userName}.json`);
                 const data = await res.json();
                 if (data && data.score !== undefined) {
-                    // Если на сервере число отличается от того что на экране - исправляем
+                    // Если данные на сервере изменились (например, через консоль), обновляем экран
                     if (data.score !== count) {
                         count = data.score;
                         power = data.power || power;
@@ -162,16 +160,31 @@
         }
 
         function openModal(id) { 
-            closeModals();
+            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             document.getElementById(id).style.display = 'flex'; 
-            if(id === 'modal-top') loadLB(); 
+            if(id === 'modal-top') {
+                document.getElementById('nav-top').classList.add('active');
+                loadLB();
+            }
+            if(id === 'modal-shop') document.getElementById('nav-shop').classList.add('active');
         }
 
-        function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); updateUI(); }
+        function closeModals() { 
+            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('nav-home').classList.add('active');
+            updateUI(); 
+        }
 
         function changeName() {
             let n = prompt("Новый ник:", userName);
-            if(n) { userName = n; localStorage.setItem('p_name', n); updateUI(); sync(); }
+            if(n) { 
+                userName = n; 
+                localStorage.setItem('p_name', n); 
+                updateUI(); 
+                sync(); 
+            }
         }
 
         async function loadLB() {
@@ -180,18 +193,18 @@
             const box = document.getElementById('lb-content');
             box.innerHTML = '';
             if(!data) return;
+            // Сортировка по score
             const sorted = Object.entries(data).sort((a,b)=>b[1].score-a[1].score).slice(0,15);
             sorted.forEach((p, i) => {
                 box.innerHTML += `<div class="player-row" style="${p[0]===userName?'color:#3498db;font-weight:bold':''}">
                     <span>${i+1}. ${p[0]} <span class="lvl-badge">LVL ${p[1].power||1}</span></span>
-                    <b>${p[1].score.toLocaleString()} 💵</b></div>`;
+                    <b>${(p[1].score || 0).toLocaleString()} 💵</b></div>`;
             });
         }
 
         updateUI();
-        // Проверяем сервер каждые 2 секунды для точности
-        setInterval(fetchServerData, 2000); 
-        // Обновляем таблицу лидеров каждые 5 сек
+        // Частое обновление данных для исключения разницы в числах
+        setInterval(fetchServerData, 1500); 
         setInterval(() => {
             if(document.getElementById('modal-top').style.display === 'flex') loadLB();
         }, 5000);
