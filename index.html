@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GERB CLICKER 2025</title>
+    <title>GERB CLICKER PRO</title>
     <style>
         :root { --red: #ff4757; --blue: #54a0ff; --gold: #eccc68; --bg: #0a0b10; }
         body { 
@@ -17,17 +17,23 @@
         #score { font-size: 3.5rem; font-weight: 900; color: white; text-shadow: 0 0 20px rgba(84, 160, 255, 0.5); }
         #user-tag { font-size: 0.8rem; color: var(--blue); margin-top: 5px; letter-spacing: 1px; }
 
-        #heat-wrap { width: 80%; max-width: 300px; height: 6px; background: #1e272e; margin: 15px auto; border-radius: 10px; overflow: hidden; }
-        #heat-bar { width: 0%; height: 100%; background: linear-gradient(90deg, var(--blue), var(--red)); transition: width 0.1s; }
+        #heat-wrap { width: 80%; max-width: 300px; height: 8px; background: #1e272e; margin: 15px auto; border-radius: 10px; overflow: hidden; border: 1px solid #333; }
+        #heat-bar { width: 0%; height: 100%; background: linear-gradient(90deg, var(--blue), var(--red)); transition: width 0.1s linear; }
 
         #main-stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
-        #combo-info { font-size: 1.5rem; font-weight: bold; color: var(--gold); height: 30px; margin-bottom: 10px; text-transform: uppercase; }
+        #combo-info { font-size: 1.5rem; font-weight: bold; color: var(--gold); height: 30px; margin-bottom: 10px; }
         
+        #gerb-container { position: relative; width: 260px; height: 260px; }
         #gerb { 
-            width: 260px; height: 260px; border-radius: 50%; border: 6px solid #1e272e;
-            object-fit: cover; transition: transform 0.05s, filter 0.4s; cursor: pointer;
+            width: 100%; height: 100%; border-radius: 50%; border: 6px solid #1e272e;
+            object-fit: cover; transition: transform 0.05s, filter 0.5s; cursor: pointer;
         }
-        .locked { filter: grayscale(1) brightness(0.2) blur(2px) !important; pointer-events: none; }
+        .locked { filter: grayscale(1) brightness(0.2) blur(3px) !important; pointer-events: none; }
+        
+        #lock-timer { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 2rem; font-weight: bold; color: var(--red); display: none; z-index: 10;
+        }
 
         .pop { position: absolute; font-weight: 900; pointer-events: none; animation: popAnim 0.7s forwards; z-index: 100; }
         @keyframes popAnim { 0% { opacity: 1; transform: translateY(0) scale(1.5); } 100% { opacity: 0; transform: translateY(-130px) scale(0.8); } }
@@ -37,15 +43,13 @@
             display: none; flex-direction: column; z-index: 500; padding: 25px;
         }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
-        .content-box { flex: 1; overflow-y: auto; border-radius: 15px; }
+        .content-box { flex: 1; overflow-y: auto; }
         
         .row { display: flex; justify-content: space-between; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 8px; }
-        .chat-msg { padding: 10px; background: #1e272e; border-radius: 12px; margin-bottom: 10px; border-left: 3px solid var(--blue); }
-
+        
         nav { height: 80px; background: #0f1116; display: flex; border-top: 1px solid #1e272e; }
         .n-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; color: #57606f; }
         .n-btn.active { color: var(--blue); }
-        .n-btn i { font-style: normal; font-size: 1.4rem; margin-bottom: 4px; }
     </style>
 </head>
 <body oncontextmenu="return false;">
@@ -54,11 +58,15 @@
         <div id="score">...</div>
         <div id="user-tag">ЗАГРУЗКА...</div>
         <div id="heat-wrap"><div id="heat-bar"></div></div>
+        <div id="status-text" style="font-size: 0.7rem; color: #555; margin-top: 5px;">СИСТЕМА СТАБИЛЬНА</div>
     </div>
 
     <div id="main-stage">
         <div id="combo-info"></div>
-        <img id="gerb" src="gerb.png" draggable="false">
+        <div id="gerb-container">
+            <div id="lock-timer">50s</div>
+            <img id="gerb" src="gerb.png" draggable="false">
+        </div>
     </div>
 
     <div id="modal-top" class="modal">
@@ -110,7 +118,7 @@
         const API = "https://clikercomee-default-rtdb.firebaseio.com";
         let nick = localStorage.getItem('player_nick');
         if (!nick) {
-            nick = prompt("ВВЕДИТЕ НИК ДЛЯ ИГРЫ:");
+            nick = prompt("НИК ДЛЯ ИГРЫ:");
             if (!nick) nick = "User" + Math.floor(Math.random()*999);
             localStorage.setItem('player_nick', nick);
         }
@@ -118,15 +126,12 @@
         let score = 0, heat = 0, combo = 0, mult = 1, isLocked = false;
         let lastClickTime = Date.now();
 
-        // 1. ЗАГРУЗКА ДАННЫХ ПРИ ВХОДЕ
         async function initGame() {
             try {
                 const res = await fetch(`${API}/players/${nick}.json`);
                 const data = await res.json();
-                if (data && data.s !== undefined) {
-                    score = data.s;
-                }
-            } catch(e) { console.log("New user"); }
+                if (data && data.s !== undefined) score = data.s;
+            } catch(e) {}
             updateUI();
         }
 
@@ -141,106 +146,105 @@
             if (isLocked) return;
 
             lastClickTime = Date.now();
-            heat += 2; // Ровно 50 кликов до перегрева
+            heat += 1; // 100 кликов до 100%
 
             if (heat >= 100) {
-                isLocked = true; heat = 100; combo = 0; mult = 1;
-                document.getElementById('gerb').classList.add('locked');
-                setTimeout(() => { 
-                    isLocked = false; heat = 0; 
-                    document.getElementById('gerb').classList.remove('locked');
-                    updateUI();
-                }, 4000);
+                triggerLock();
+                return;
             }
 
             combo++;
             mult = combo > 100 ? 10 : (combo > 50 ? 5 : (combo > 15 ? 2 : 1));
             
-            let val = 1 * mult;
-            score += val;
+            score += (1 * mult);
             
             const p = document.createElement('div');
-            p.className = 'pop'; p.innerText = `+${val}`;
-            p.style.left = (e.clientX || e.touches[0].clientX) + "px";
-            p.style.top = (e.clientY || e.touches[0].clientY) + "px";
+            p.className = 'pop'; p.innerText = `+${1 * mult}`;
+            p.style.left = (e.clientX || (e.touches ? e.touches[0].clientX : 0)) + "px";
+            p.style.top = (e.clientY || (e.touches ? e.touches[0].clientY : 0)) + "px";
             p.style.color = mult > 1 ? "var(--gold)" : "white";
             document.body.appendChild(p);
             setTimeout(() => p.remove(), 700);
             updateUI();
         }
 
-        // 2. СБРОС КОМБО ПРИ БЕЗДЕЙСТВИИ
-        setInterval(() => {
-            if (Date.now() - lastClickTime > 1500 && combo > 0) {
-                combo = 0;
-                mult = 1;
+        function triggerLock() {
+            isLocked = true;
+            heat = 100;
+            combo = 0;
+            mult = 1;
+            document.getElementById('gerb').classList.add('locked');
+            document.getElementById('lock-timer').style.display = 'block';
+            document.getElementById('status-text').innerText = "ПЕРЕГРЕВ! ОЖИДАЙТЕ ОХЛАЖДЕНИЯ";
+            document.getElementById('status-text').style.color = 'var(--red)';
+
+            let timeLeft = 50;
+            let cooldown = setInterval(() => {
+                timeLeft--;
+                heat = (timeLeft / 50) * 100; // Линия идет назад
+                document.getElementById('lock-timer').innerText = timeLeft + "s";
                 updateUI();
+
+                if (timeLeft <= 0) {
+                    clearInterval(cooldown);
+                    isLocked = false;
+                    heat = 0;
+                    document.getElementById('gerb').classList.remove('locked');
+                    document.getElementById('lock-timer').style.display = 'none';
+                    document.getElementById('status-text').innerText = "СИСТЕМА СТАБИЛЬНА";
+                    document.getElementById('status-text').style.color = '#555';
+                    updateUI();
+                }
+            }, 1000);
+        }
+
+        // Сброс комбо
+        setInterval(() => {
+            if (Date.now() - lastClickTime > 1500 && combo > 0 && !isLocked) {
+                combo = 0; mult = 1; updateUI();
             }
         }, 500);
 
+        // Стандартные функции чата/топа/обмена (без изменений)
         async function send() {
             const i = document.getElementById('msg-input');
             if(!i.value) return;
             await fetch(`${API}/chat.json`, { method: 'POST', body: JSON.stringify({u: nick, m: i.value, t: Date.now()}) });
             i.value = ''; loadChat();
         }
-
         async function loadChat() {
             const res = await fetch(`${API}/chat.json`);
             const data = await res.json();
             const b = document.getElementById('chat-data'); b.innerHTML = '';
             if(!data) return;
-            Object.values(data).slice(-30).forEach(m => {
-                b.innerHTML += `<div class="chat-msg"><b>${m.u}</b>: ${m.m}</div>`;
-            });
+            Object.values(data).slice(-30).forEach(m => { b.innerHTML += `<div style="padding:10px; background:#1e272e; border-radius:10px; margin-bottom:5px;"><b>${m.u}</b>: ${m.m}</div>`; });
             b.scrollTop = b.scrollHeight;
         }
-
         async function loadTop() {
             const res = await fetch(`${API}/players.json`);
             const data = await res.json();
             const b = document.getElementById('lb-data'); b.innerHTML = '';
             if(!data) return;
-            Object.entries(data).sort((a,b) => b[1].s - a[1].s).slice(0,15).forEach((p, i) => {
-                b.innerHTML += `<div class="row"><span>${i+1}. ${p[0]}</span><b>${Math.floor(p[1].s).toLocaleString()}</b></div>`;
-            });
+            Object.entries(data).sort((a,b) => b[1].s - a[1].s).slice(0,15).forEach((p, i) => { b.innerHTML += `<div class="row"><span>${i+1}. ${p[0]}</span><b>${Math.floor(p[1].s).toLocaleString()}</b></div>`; });
         }
-
         async function buy(name, cost) {
             if (score < cost) { alert("Мало монет!"); return; }
-            let tg = prompt("Ваш Телеграм для связи:");
+            let tg = prompt("Твой Телеграм:");
             if (!tg) return;
             score -= cost;
             await fetch(`${API}/orders.json`, { method: 'POST', body: JSON.stringify({u: nick, item: name, tg: tg, t: Date.now()}) });
-            alert("Заявка принята!");
-            updateUI();
+            alert("Заявка отправлена!"); updateUI();
         }
+        function show(id) { closeModals(); document.getElementById(id).style.display = 'flex'; if(id === 'modal-top') loadTop(); if(id === 'modal-chat') loadChat(); }
+        function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
 
-        function show(id) {
-            closeModals();
-            document.getElementById(id).style.display = 'flex';
-            document.getElementById('btn-' + id.split('-')[1]).classList.add('active');
-            if(id === 'modal-top') loadTop();
-            if(id === 'modal-chat') loadChat();
-        }
-
-        function closeModals() {
-            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
-            document.querySelectorAll('.n-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('btn-home').classList.add('active');
-        }
-
-        // Охлаждение и Сохранение
-        setInterval(() => { if(heat > 0 && !isLocked) { heat -= 1; updateUI(); } }, 300);
-        setInterval(async () => { 
-            if (nick) await fetch(`${API}/players/${nick}.json`, { method: 'PUT', body: JSON.stringify({s: score}) }); 
-        }, 5000);
+        setInterval(async () => { if (nick) await fetch(`${API}/players/${nick}.json`, { method: 'PUT', body: JSON.stringify({s: score}) }); }, 7000);
 
         const target = document.getElementById('gerb');
         target.addEventListener('touchstart', (e) => { e.preventDefault(); clicker(e); });
         target.addEventListener('mousedown', (e) => clicker(e));
 
-        initGame(); // Запуск загрузки данных
+        initGame();
     </script>
 </body>
 </html>
