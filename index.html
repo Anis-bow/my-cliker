@@ -3,196 +3,216 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ULTIMATE GERB CLICKER</title>
+    <title>GERB CLICKER 2025</title>
     <style>
-        :root { --red: #ff3e3e; --blue: #3498db; --gold: #fbff00; --dark: #0a0a0a; }
+        :root { --red: #ff4757; --blue: #54a0ff; --gold: #eccc68; --bg: #0a0b10; }
         body { 
-            margin: 0; background: var(--dark); color: white; 
-            font-family: 'Segoe UI', sans-serif; height: 100vh; 
+            margin: 0; background: var(--bg); color: white; 
+            font-family: 'Segoe UI', system-ui, sans-serif; height: 100vh; 
             display: flex; flex-direction: column; overflow: hidden;
         }
         * { -webkit-user-select: none; user-select: none; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-        /* Шапка */
-        #header { padding: 15px; text-align: center; border-bottom: 1px solid #222; }
-        #score { font-size: 3rem; font-weight: 900; color: var(--red); text-shadow: 0 0 15px rgba(255, 62, 62, 0.4); }
-        #heat-container { width: 100%; height: 6px; background: #111; margin-top: 10px; border-radius: 3px; overflow: hidden; }
-        #heat-fill { width: 0%; height: 100%; background: var(--red); transition: width 0.1s; }
+        /* Верхняя панель */
+        #header { padding: 20px; text-align: center; background: linear-gradient(to bottom, #161b22, transparent); }
+        #score { font-size: 3.5rem; font-weight: 900; color: white; text-shadow: 0 0 20px rgba(84, 160, 255, 0.5); }
+        #user-tag { font-size: 0.8rem; color: var(--blue); margin-top: 5px; letter-spacing: 1px; }
 
-        /* Игровое поле */
-        #game-zone { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; }
-        #gerb-img { 
-            width: 260px; height: 260px; border-radius: 50%; border: 4px solid #333;
-            object-fit: cover; transition: transform 0.05s, filter 0.3s; cursor: pointer;
-        }
-        .overheat { filter: grayscale(1) brightness(0.3); pointer-events: none; }
+        /* Система перегрева */
+        #heat-wrap { width: 80%; max-width: 300px; height: 6px; background: #1e272e; margin: 15px auto; border-radius: 10px; overflow: hidden; }
+        #heat-bar { width: 0%; height: 100%; background: linear-gradient(90deg, var(--blue), var(--red)); transition: width 0.1s; }
+
+        /* Игровая зона */
+        #main-stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+        #combo-info { font-size: 1.5rem; font-weight: bold; color: var(--gold); height: 30px; margin-bottom: 10px; }
         
-        /* Эффекты */
-        .pop { position: absolute; font-weight: bold; pointer-events: none; animation: popUp 0.6s forwards; z-index: 100; }
-        @keyframes popUp { 0% { opacity: 1; transform: translateY(0) scale(1.5); } 100% { opacity: 0; transform: translateY(-120px) scale(1); } }
+        #gerb { 
+            width: 260px; height: 260px; border-radius: 50%; border: 6px solid #1e272e;
+            object-fit: cover; transition: transform 0.05s, filter 0.4s; cursor: pointer;
+            box-shadow: 0 0 40px rgba(0,0,0,0.5);
+        }
+        .locked { filter: grayscale(1) brightness(0.2) blur(2px) !important; pointer-events: none; }
 
-        /* Модалки */
+        /* Частицы клика */
+        .pop { position: absolute; font-weight: 900; pointer-events: none; animation: popAnim 0.7s forwards; z-index: 100; }
+        @keyframes popAnim { 0% { opacity: 1; transform: translateY(0) scale(1.5); } 100% { opacity: 0; transform: translateY(-130px) scale(0.8); } }
+
+        /* Модальные окна */
         .modal { 
-            position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(10px);
-            display: none; flex-direction: column; z-index: 200; padding: 20px;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95); backdrop-filter: blur(15px);
+            display: none; flex-direction: column; z-index: 500; padding: 25px;
         }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .scroll-area { flex: 1; overflow-y: auto; background: rgba(255,255,255,0.03); border-radius: 15px; padding: 10px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .content-box { flex: 1; overflow-y: auto; border-radius: 15px; }
         
-        /* Обмен */
-        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .shop-card { background: #151515; padding: 15px; border-radius: 15px; text-align: center; border: 1px solid #222; }
-        .shop-card img { width: 60px; height: 60px; border-radius: 10px; margin-bottom: 10px; }
-        .buy-btn { background: var(--blue); border: none; color: white; width: 100%; padding: 8px; border-radius: 8px; font-weight: bold; }
+        /* Список ТОП и ЧАТ */
+        .row { display: flex; justify-content: space-between; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 8px; }
+        .chat-msg { padding: 10px; background: #1e272e; border-radius: 12px; margin-bottom: 10px; border-left: 3px solid var(--blue); }
 
         /* Навигация */
-        nav { height: 70px; background: #111; display: flex; border-top: 1px solid #222; }
-        .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; color: #666; cursor: pointer; }
-        .nav-btn.active { color: var(--blue); }
-        .nav-btn b { font-size: 1.2rem; }
+        nav { height: 80px; background: #0f1116; display: flex; border-top: 1px solid #1e272e; padding-bottom: env(safe-area-inset-bottom); }
+        .n-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; color: #57606f; transition: 0.2s; }
+        .n-btn.active { color: var(--blue); transform: translateY(-3px); }
+        .n-btn i { font-style: normal; font-size: 1.4rem; margin-bottom: 4px; }
     </style>
 </head>
 <body oncontextmenu="return false;">
 
     <div id="header">
         <div id="score">0</div>
-        <div style="font-size: 0.8rem; color: #888;">COMBO: <span id="mult" style="color:var(--gold)">x1</span></div>
-        <div id="heat-container"><div id="heat-fill"></div></div>
+        <div id="user-tag">ЗАГРУЗКА...</div>
+        <div id="heat-wrap"><div id="heat-bar"></div></div>
     </div>
 
-    <div id="game-zone">
-        <img id="gerb-img" src="gerb.png" draggable="false">
+    <div id="main-stage">
+        <div id="combo-info"></div>
+        <img id="gerb" src="gerb.png" draggable="false">
     </div>
 
     <div id="modal-top" class="modal">
-        <div class="modal-header"><h2>🏆 ТОП ИГРОКОВ</h2><b onclick="closeModals()">✕</b></div>
-        <div id="lb-list" class="scroll-area"></div>
+        <div class="modal-header"><h2>🏆 РЕЙТИНГ</h2><b onclick="closeModals()" style="font-size: 1.5rem; cursor:pointer">✕</b></div>
+        <div id="lb-data" class="content-box"></div>
     </div>
 
     <div id="modal-chat" class="modal">
-        <div class="modal-header"><h2>💬 ОБЩИЙ ЧАТ</h2><b onclick="closeModals()">✕</b></div>
-        <div id="chat-list" class="scroll-area"></div>
-        <div style="display:flex; gap:10px; margin-top:10px;">
-            <input type="text" id="chat-in" placeholder="Сообщение..." style="flex:1; background:#222; border:none; color:white; padding:12px; border-radius:10px;">
-            <button onclick="sendMsg()" style="background:var(--blue); border:none; padding:0 20px; border-radius:10px; color:white;">➤</button>
+        <div class="modal-header"><h2>💬 ЧАТ</h2><b onclick="closeModals()" style="font-size: 1.5rem; cursor:pointer">✕</b></div>
+        <div id="chat-data" class="content-box"></div>
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <input type="text" id="msg-input" placeholder="Введите текст..." style="flex:1; background:#1e272e; border:1px solid #333; color:white; padding:12px; border-radius:12px; outline:none;">
+            <button onclick="send()" style="background:var(--blue); border:none; padding:0 20px; border-radius:12px; color:white; font-weight:bold;">➤</button>
         </div>
     </div>
 
     <div id="modal-shop" class="modal">
-        <div class="modal-header"><h2>🎁 ОБМЕН</h2><b onclick="closeModals()">✕</b></div>
-        <div class="scroll-area">
-            <div class="shop-grid">
-                <div class="shop-card"><img src="i (5).webp"><h4>Мишка</h4><button class="buy-btn" onclick="buy('Мишка', 25000)">25k</button></div>
-                <div class="shop-card"><img src="538e404bde2a5b9680bf486cdc6ea4b4.jpg"><h4>Роза</h4><button class="buy-btn" onclick="buy('Роза', 30000)">30k</button></div>
-                <div class="shop-card"><img src="default.png"><h4>Секрет</h4><button class="buy-btn" onclick="buy('Подарок', 50000)">50k</button></div>
+        <div class="modal-header"><h2>🎁 ОБМЕН</h2><b onclick="closeModals()" style="font-size: 1.5rem; cursor:pointer">✕</b></div>
+        <div class="content-box">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                <div style="background:#1e272e; padding:15px; border-radius:15px; text-align:center;">
+                    <img src="i (5).webp" style="width:70px; margin-bottom:10px;">
+                    <div>Мишка</div><button onclick="buy('Мишка', 25000)" style="width:100%; margin-top:10px; background:var(--blue); border:none; color:white; padding:8px; border-radius:8px;">25k</button>
+                </div>
+                <div style="background:#1e272e; padding:15px; border-radius:15px; text-align:center;">
+                    <img src="538e404bde2a5b9680bf486cdc6ea4b4.jpg" style="width:70px; margin-bottom:10px;">
+                    <div>Роза</div><button onclick="buy('Роза', 30000)" style="width:100%; margin-top:10px; background:var(--blue); border:none; color:white; padding:8px; border-radius:8px;">30k</button>
+                </div>
             </div>
         </div>
     </div>
 
     <nav>
-        <div class="nav-btn active" onclick="closeModals()"><b>🏠</b>ИГРА</div>
-        <div class="nav-btn" onclick="openModal('modal-top')"><b>🏆</b>ТОП</div>
-        <div class="nav-btn" onclick="openModal('modal-chat')"><b>💬</b>ЧАТ</div>
-        <div class="nav-btn" onclick="openModal('modal-shop')"><b>🎁</b>ОБМЕН</div>
+        <div class="n-btn active" id="btn-home" onclick="closeModals()"><i>🏠</i>ГЛАВНАЯ</div>
+        <div class="n-btn" id="btn-top" onclick="show('modal-top')"><i>🏆</i>ТОП</div>
+        <div class="n-btn" id="btn-chat" onclick="show('modal-chat')"><i>💬</i>ЧАТ</div>
+        <div class="n-btn" id="btn-shop" onclick="show('modal-shop')"><i>🎁</i>ОБМЕН</div>
     </nav>
 
     <script>
-        const DB = "https://clikercomee-default-rtdb.firebaseio.com";
-        let user = localStorage.getItem('p_user') || "User" + Math.floor(Math.random()*1000);
-        localStorage.setItem('p_user', user);
-
-        let score = 0, heat = 0, mult = 1, combo = 0, isOver = false;
-
-        function updateUI() {
-            document.getElementById('score').innerText = Math.floor(score).toLocaleString();
-            document.getElementById('mult').innerText = `x${mult}`;
-            document.getElementById('heat-fill').style.width = heat + "%";
+        const API = "https://clikercomee-default-rtdb.firebaseio.com";
+        
+        // СБРОС И ВХОД
+        let nick = localStorage.getItem('player_nick');
+        if (!nick) {
+            nick = prompt("ДОБРО ПОЖАЛОВАТЬ! ВВЕДИТЕ ВАШ НИК:");
+            if (!nick || nick.length < 2) nick = "User" + Math.floor(Math.random()*999);
+            localStorage.setItem('player_nick', nick);
         }
 
-        function clickAction(e) {
-            if (isOver) return;
-            
-            heat += 12;
+        let score = 0, heat = 0, combo = 0, mult = 1, isLocked = false;
+
+        function update() {
+            document.getElementById('score').innerText = Math.floor(score).toLocaleString();
+            document.getElementById('user-tag').innerText = nick.toUpperCase();
+            document.getElementById('heat-bar').style.width = heat + "%";
+            document.getElementById('combo-info').innerText = combo > 10 ? `COMBO X${mult}` : "";
+        }
+
+        function clicker(e) {
+            if (isLocked) return;
+
+            // Нагрев
+            heat += 10;
             if (heat >= 100) {
-                isOver = true; heat = 100; combo = 0; mult = 1;
-                document.getElementById('gerb-img').classList.add('overheat');
+                isLocked = true; heat = 100; combo = 0; mult = 1;
+                document.getElementById('gerb').classList.add('locked');
                 setTimeout(() => { 
-                    isOver = false; heat = 0; 
-                    document.getElementById('gerb-img').classList.remove('overheat');
-                    updateUI();
-                }, 5000);
+                    isLocked = false; heat = 0; 
+                    document.getElementById('gerb').classList.remove('locked');
+                    update();
+                }, 4000);
             }
 
+            // Комбо логика
             combo++;
-            mult = combo > 50 ? 10 : (combo > 20 ? 5 : (combo > 10 ? 2 : 1));
+            mult = combo > 100 ? 10 : (combo > 50 ? 5 : (combo > 20 ? 2 : 1));
             
-            let gain = 1 * mult;
-            score += gain;
+            let val = 1 * mult;
+            score += val;
             
-            showPop(e, `+${gain}`);
-            updateUI();
-        }
-
-        function showPop(e, txt) {
+            // Анимация текста
             const p = document.createElement('div');
-            p.className = 'pop'; p.innerText = txt;
+            p.className = 'pop'; p.innerText = `+${val}`;
             p.style.left = (e.clientX || e.touches[0].clientX) + "px";
             p.style.top = (e.clientY || e.touches[0].clientY) + "px";
             p.style.color = mult > 1 ? "var(--gold)" : "white";
             document.body.appendChild(p);
-            setTimeout(() => p.remove(), 600);
+            setTimeout(() => p.remove(), 700);
+
+            update();
         }
 
-        async function sendMsg() {
-            const inp = document.getElementById('chat-in');
-            if(!inp.value) return;
-            await fetch(`${DB}/chat.json`, { method: 'POST', body: JSON.stringify({u: user, m: inp.value, t: Date.now()}) });
-            inp.value = ''; loadChat();
+        async function send() {
+            const i = document.getElementById('msg-input');
+            if(!i.value) return;
+            await fetch(`${API}/chat.json`, { method: 'POST', body: JSON.stringify({u: nick, m: i.value, t: Date.now()}) });
+            i.value = ''; loadChat();
         }
 
         async function loadChat() {
-            const res = await fetch(`${DB}/chat.json`);
+            const res = await fetch(`${API}/chat.json`);
             const data = await res.json();
-            const box = document.getElementById('chat-list'); box.innerHTML = '';
+            const b = document.getElementById('chat-data'); b.innerHTML = '';
             if(!data) return;
-            Object.values(data).slice(-20).forEach(m => {
-                box.innerHTML += `<div style="margin-bottom:8px"><b>${m.u}:</b> ${m.m}</div>`;
+            Object.values(data).slice(-30).forEach(m => {
+                b.innerHTML += `<div class="chat-msg"><b>${m.u}</b><br>${m.m}</div>`;
             });
-            box.scrollTop = box.scrollHeight;
+            b.scrollTop = b.scrollHeight;
         }
 
-        async function loadLB() {
-            const res = await fetch(`${DB}/players.json`);
+        async function loadTop() {
+            const res = await fetch(`${API}/players.json`);
             const data = await res.json();
-            const box = document.getElementById('lb-list'); box.innerHTML = '';
-            Object.entries(data).sort((a,b) => b[1].s - a[1].s).slice(0,10).forEach((p, i) => {
-                box.innerHTML += `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #222;">
-                    <span>${i+1}. ${p[0]}</span><b>${Math.floor(p[1].s).toLocaleString()}</b></div>`;
+            const b = document.getElementById('lb-data'); b.innerHTML = '';
+            if(!data) return;
+            Object.entries(data).sort((a,b) => b[1].s - a[1].s).slice(0,15).forEach((p, i) => {
+                b.innerHTML += `<div class="row"><span>${i+1}. ${p[0]}</span><b>${Math.floor(p[1].s).toLocaleString()}</b></div>`;
             });
         }
 
-        function openModal(id) {
+        function show(id) {
             closeModals();
             document.getElementById(id).style.display = 'flex';
-            if(id === 'modal-top') loadLB();
+            document.getElementById('btn-' + id.split('-')[1]).classList.add('active');
+            if(id === 'modal-top') loadTop();
             if(id === 'modal-chat') loadChat();
         }
 
         function closeModals() {
             document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+            document.querySelectorAll('.n-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-home').classList.add('active');
         }
 
-        async function sync() {
-            await fetch(`${DB}/players/${user}.json`, { method: 'PUT', body: JSON.stringify({s: score}) });
-        }
+        // Авто-сохранение и охлаждение
+        setInterval(() => { if(heat > 0 && !isLocked) { heat -= 2; update(); } }, 2500);
+        setInterval(async () => {
+            await fetch(`${API}/players/${nick}.json`, { method: 'PUT', body: JSON.stringify({s: score}) });
+        }, 7000);
 
-        const img = document.getElementById('gerb-img');
-        img.addEventListener('touchstart', (e) => { e.preventDefault(); clickAction(e); });
-        img.addEventListener('mousedown', (e) => clickAction(e));
+        const target = document.getElementById('gerb');
+        target.addEventListener('touchstart', (e) => { e.preventDefault(); clicker(e); });
+        target.addEventListener('mousedown', (e) => clicker(e));
 
-        setInterval(() => { if(heat > 0 && !isOver) { heat -= 2; updateUI(); } }, 200);
-        setInterval(sync, 5000);
-        updateUI();
+        update();
     </script>
 </body>
 </html>
