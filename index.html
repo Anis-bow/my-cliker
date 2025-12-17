@@ -18,20 +18,23 @@
         .shake-anim { animation: shake 0.1s; }
 
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(4px); }
-        .modal-content { background: white; width: 90%; max-width: 400px; border-radius: 25px; padding: 20px; position: relative; max-height: 75vh; display: flex; flex-direction: column; }
-        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.8rem; cursor: pointer; color: #ccc; }
+        .modal-content { background: white; width: 90%; max-width: 400px; border-radius: 25px; padding: 20px; position: relative; max-height: 80vh; display: flex; flex-direction: column; overflow-y: auto; }
+        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.8rem; cursor: pointer; color: #ccc; z-index: 10; }
         
-        #chat-messages { flex: 1; overflow-y: auto; margin: 10px 0; font-size: 0.9rem; display: flex; flex-direction: column; gap: 8px; }
-        .chat-row { padding: 8px 12px; background: #f1f3f5; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; }
-        .chat-text { flex: 1; margin-right: 10px; word-break: break-word; }
-        .del-msg-btn { background: #ff7675; color: white; border: none; border-radius: 6px; cursor: pointer; padding: 2px 6px; font-size: 0.7rem; }
+        /* Стили для магазина подарков */
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 10px; }
+        .shop-item { background: #f8f9fa; padding: 10px; border-radius: 15px; text-align: center; border: 1px solid #eee; }
+        .shop-item img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 5px; }
+        .shop-item h4 { margin: 5px 0; font-size: 0.9rem; }
+        .shop-item p { margin: 0 0 10px; color: #e67e22; font-weight: bold; font-size: 0.8rem; }
+        .buy-btn { background: #27ae60; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; width: 100%; }
 
-        .chat-ctrl { display: flex; gap: 5px; }
-        #chat-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 10px; outline: none; }
-        #send-btn { background: #3498db; border: none; color: white; border-radius: 10px; padding: 0 15px; cursor: pointer; }
+        #chat-messages { flex: 1; overflow-y: auto; margin: 10px 0; font-size: 0.9rem; display: flex; flex-direction: column; gap: 8px; padding: 10px; }
+        .chat-row { padding: 8px 12px; background: #f1f3f5; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .del-msg-btn { background: #ff7675; color: white; border: none; border-radius: 6px; padding: 2px 6px; cursor: pointer; }
         
-        .player-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; font-size: 0.9rem; align-items: center; }
-        .lvl-badge { background: #f39c12; color: white; padding: 2px 6px; border-radius: 5px; font-size: 0.7rem; margin-left: 5px; font-weight: bold; }
+        .player-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; align-items: center; }
+        .lvl-badge { background: #f39c12; color: white; padding: 2px 6px; border-radius: 5px; font-size: 0.7rem; margin-left: 5px; }
         
         nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: white; display: flex; border-top: 1px solid #eee; z-index: 50; }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; color: #adb5bd; cursor: pointer; }
@@ -53,36 +56,64 @@
     <div id="modal-top" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModals()">×</span>
-            <h2>🏆 ТОП ИГРОКОВ</h2>
-            <div id="lb-content">Загрузка...</div>
+            <h2 style="padding: 0 20px;">👥 ИГРОКИ</h2>
+            <div id="lb-content" style="padding: 0 20px;">Загрузка...</div>
+        </div>
+    </div>
+
+    <div id="modal-shop" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModals()">×</span>
+            <h2 style="padding: 0 20px;">🎁 ОБМЕН ПОДАРКОВ</h2>
+            <div class="shop-grid">
+                <div class="shop-item">
+                    <img src="https://cdn-icons-png.flaticon.com/512/2589/2589175.png" alt="Сердечко">
+                    <h4>Сердечко</h4><p>20,000 💵</p>
+                    <button class="buy-btn" onclick="exchangeGift('Сердечко', 20000)">Обменять</button>
+                </div>
+                <div class="shop-item">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3069/3069172.png" alt="Мишка">
+                    <h4>Мишка</h4><p>20,000 💵</p>
+                    <button class="buy-btn" onclick="exchangeGift('Мишка', 20000)">Обменять</button>
+                </div>
+                <div class="shop-item">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3405/3405777.png" alt="Роза">
+                    <h4>Роза</h4><p>35,000 💵</p>
+                    <button class="buy-btn" onclick="exchangeGift('Роза', 35000)">Обменять</button>
+                </div>
+                <div class="shop-item">
+                    <img src="https://cdn-icons-png.flaticon.com/512/4213/4213958.png" alt="Подарок">
+                    <h4>Подарок</h4><p>35,000 💵</p>
+                    <button class="buy-btn" onclick="exchangeGift('Подарок', 35000)">Обменять</button>
+                </div>
+            </div>
         </div>
     </div>
 
     <div id="modal-chat" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModals()">×</span>
-            <h2>💬 ЧАТ</h2>
+            <h2 style="padding: 0 20px;">💬 ЧАТ</h2>
             <div id="chat-messages"></div>
-            <div class="chat-ctrl">
-                <input type="text" id="chat-input" placeholder="Напиши что-нибудь...">
-                <button id="send-btn">➤</button>
+            <div style="display:flex; padding: 10px; gap: 5px;">
+                <input type="text" id="chat-input" placeholder="..." style="flex:1; padding: 10px; border-radius: 10px; border: 1px solid #ddd;">
+                <button id="send-btn" style="padding: 10px; border-radius: 10px; background: #3498db; color: white; border: none;">➤</button>
             </div>
         </div>
     </div>
 
     <nav>
         <div class="nav-item active" onclick="closeModals()">🏠<br>ГЛАВНАЯ</div>
-        <div class="nav-item" onclick="openModal('modal-top')">🏆<br>ТОП</div>
+        <div class="nav-item" onclick="openModal('modal-top')">👥<br>ИГРОКИ</div>
+        <div class="nav-item" onclick="openModal('modal-shop')">🎁<br>ОБМЕН</div>
         <div class="nav-item" onclick="openModal('modal-chat')">💬<br>ЧАТ</div>
         <div class="nav-item" onclick="buyBoost()" style="color: #f39c12;">⚡<br><b id="boost-label">100</b></div>
     </nav>
 
     <script>
         const DB_URL = "https://clikercomee-default-rtdb.firebaseio.com"; 
-
         let userName = localStorage.getItem('p_name') || prompt("Твой ник:") || "User" + Math.floor(Math.random()*100);
         localStorage.setItem('p_name', userName);
-
         let count = parseInt(localStorage.getItem('p_coins')) || 0;
         let power = parseInt(localStorage.getItem('p_power')) || 1;
 
@@ -90,38 +121,11 @@
             document.getElementById('coins').innerText = count.toLocaleString();
             document.getElementById('current-power').innerText = power;
             document.getElementById('display-name').innerText = userName;
-            let cost = Math.pow(2, power - 1) * 100;
-            document.getElementById('boost-label').innerText = cost;
+            document.getElementById('boost-label').innerText = Math.pow(2, power - 1) * 100;
         }
         updateUI();
 
-        async function listenToMyStats() {
-            try {
-                const res = await fetch(`${DB_URL}/players/${userName}.json`);
-                const data = await res.json();
-                if (data) {
-                    if (data.score !== count || data.power !== power) {
-                        count = data.score;
-                        power = data.power;
-                        updateUI();
-                        localStorage.setItem('p_coins', count);
-                        localStorage.setItem('p_power', power);
-                    }
-                }
-            } catch (e) {}
-        }
-
-        function changeName() {
-            let n = prompt("Новый ник:", userName);
-            if (n && n.trim() !== "") { userName = n.trim(); localStorage.setItem('p_name', userName); updateUI(); sync(); }
-        }
-
-        function openModal(id) { closeModals(); document.getElementById(id).style.display = 'flex'; if(id === 'modal-top') loadLB(); if(id === 'modal-chat') loadChat(); }
-        function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
-
-        async function sync() {
-            fetch(`${DB_URL}/players/${userName}.json`, { method: 'PUT', body: JSON.stringify({ score: count, power: power }) });
-        }
+        async function sync() { fetch(`${DB_URL}/players/${userName}.json`, { method: 'PUT', body: JSON.stringify({ score: count, power: power }) }); }
 
         document.getElementById('click-btn').onclick = () => {
             count += power; updateUI();
@@ -132,64 +136,57 @@
 
         function buyBoost() {
             let cost = Math.pow(2, power - 1) * 100;
-            if (count >= cost) {
-                count -= cost; power++; updateUI();
-                localStorage.setItem('p_power', power); localStorage.setItem('p_coins', count); sync();
-            } else { alert("Мало монет!"); }
+            if (count >= cost) { count -= cost; power++; updateUI(); sync(); } else { alert("Мало монет!"); }
         }
 
-        async function sendMessage() {
-            const inp = document.getElementById('chat-input'); if(!inp.value) return;
-            await fetch(`${DB_URL}/chat.json`, { method: 'POST', body: JSON.stringify({user:userName, text:inp.value, time:Date.now()}) });
-            inp.value = ''; loadChat();
+        async function exchangeGift(name, price) {
+            if (count < price) { alert("Недостаточно монет! Нужно " + price); return; }
+            let tg = prompt("Введи свой Юзернейм в Telegram (например, @nick):");
+            if (!tg) return;
+            if (confirm("Обменять " + price + " монет на " + name + "?")) {
+                count -= price; updateUI(); sync();
+                // Сохраняем заказ для админа
+                await fetch(`${DB_URL}/orders.json`, { method: 'POST', body: JSON.stringify({user: userName, tg: tg, gift: name, time: Date.now()}) });
+                alert("Заявка отправлена! Админ свяжется с тобой.");
+            }
         }
-        document.getElementById('send-btn').onclick = sendMessage;
 
-        async function deleteMessage(id) { if(confirm("Удалить?")) { await fetch(`${DB_URL}/chat/${id}.json`, { method: 'DELETE' }); loadChat(); } }
+        function openModal(id) { closeModals(); document.getElementById(id).style.display = 'flex'; if(id==='modal-top') loadLB(); if(id==='modal-chat') loadChat(); }
+        function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
+        function changeName() { let n = prompt("Новый ник:", userName); if(n) { userName = n; localStorage.setItem('p_name', n); updateUI(); sync(); } }
 
         async function loadChat() {
-            const res = await fetch(`${DB_URL}/chat.json`);
-            const data = await res.json();
-            const box = document.getElementById('chat-messages');
-            box.innerHTML = '';
+            const res = await fetch(`${DB_URL}/chat.json`); const data = await res.json();
+            const box = document.getElementById('chat-messages'); box.innerHTML = '';
             if(data) Object.keys(data).forEach(id => {
-                const m = data[id];
-                box.innerHTML += `<div class="chat-row"><div class="chat-text"><b>${m.user}:</b> ${m.text}</div><button class="del-msg-btn" onclick="deleteMessage('${id}')">❌</button></div>`;
+                box.innerHTML += `<div class="chat-row"><span><b>${data[id].user}:</b> ${data[id].text}</span><button class="del-msg-btn" onclick="deleteMessage('${id}')">❌</button></div>`;
             });
             box.scrollTop = box.scrollHeight;
         }
 
+        async function deleteMessage(id) { if(confirm("Удалить?")) { await fetch(`${DB_URL}/chat/${id}.json`, { method: 'DELETE' }); loadChat(); } }
+        document.getElementById('send-btn').onclick = async () => {
+            const i = document.getElementById('chat-input'); if(!i.value) return;
+            await fetch(`${DB_URL}/chat.json`, { method: 'POST', body: JSON.stringify({user:userName, text:i.value}) });
+            i.value = ''; loadChat();
+        };
+
         async function loadLB() {
-            const res = await fetch(`${DB_URL}/players.json`);
-            const data = await res.json();
-            const box = document.getElementById('lb-content');
+            const res = await fetch(`${DB_URL}/players.json`); const data = await res.json();
+            const box = document.getElementById('lb-content'); box.innerHTML = '';
             if(!data) return;
-            box.innerHTML = ''; // Чистим перед загрузкой
-            
             const sorted = Object.entries(data).sort((a,b)=>b[1].score-a[1].score).slice(0,10);
-            
             sorted.forEach((p, i) => {
-                const name = p[0];
-                const score = p[1].score || 0;
-                const lvl = p[1].power || 1; // Если power нет, ставим 1
-                
-                const row = document.createElement('div');
-                row.className = 'player-row';
-                if(name === userName) row.style.color = 'blue';
-                
-                row.innerHTML = `
-                    <span>${i+1}. ${name} <span class="lvl-badge">LVL ${lvl}</span></span>
-                    <b>${score.toLocaleString()} 💵</b>
-                `;
-                box.appendChild(row);
+                box.innerHTML += `<div class="player-row" style="${p[0]===userName?'color:blue':''}">
+                    <span>${i+1}. ${p[0]} <span class="lvl-badge">LVL ${p[1].power||1}</span></span>
+                    <b>${p[1].score.toLocaleString()} 💵</b></div>`;
             });
         }
 
         setInterval(() => {
-            listenToMyStats(); 
             if(document.getElementById('modal-chat').style.display === 'flex') loadChat();
             if(document.getElementById('modal-top').style.display === 'flex') loadLB();
-        }, 2000);
+        }, 3000);
     </script>
 </body>
 </html>
