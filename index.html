@@ -31,7 +31,9 @@
         #chat-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 10px; outline: none; }
         #send-btn { background: #3498db; border: none; color: white; border-radius: 10px; padding: 0 15px; cursor: pointer; }
         
-        .player-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .player-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        .lvl-tag { color: #f39c12; font-size: 0.75rem; margin-left: 5px; font-weight: bold; }
+        
         nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: white; display: flex; border-top: 1px solid #eee; z-index: 50; }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; color: #adb5bd; cursor: pointer; }
         .active { color: #3498db; }
@@ -95,13 +97,11 @@
         }
         updateUI();
 
-        // НОВАЯ ФУНКЦИЯ: Слушаем админку
         async function listenToMyStats() {
             try {
                 const res = await fetch(`${DB_URL}/players/${userName}.json`);
                 const data = await res.json();
                 if (data) {
-                    // Если в базе значение отличается от того что в игре - обновляем
                     if (data.score !== count || data.power !== power) {
                         count = data.score;
                         power = data.power;
@@ -110,7 +110,7 @@
                         localStorage.setItem('p_power', power);
                     }
                 }
-            } catch (e) { console.error("Ошибка синхронизации"); }
+            } catch (e) { console.error("Ошибка"); }
         }
 
         function changeName() {
@@ -194,16 +194,26 @@
             box.scrollTop = box.scrollHeight;
         }
 
+        // ОБНОВЛЕННЫЙ ТОП (С УРОВНЯМИ)
         async function loadLB() {
             const res = await fetch(`${DB_URL}/players.json`);
             const data = await res.json();
             const box = document.getElementById('lb-content');
             if(!data) return;
+            // Сортируем по очкам
             const sorted = Object.entries(data).sort((a,b)=>b[1].score-a[1].score).slice(0,10);
-            box.innerHTML = sorted.map((p,i)=>`<div class="player-row" style="${p[0] === userName ? 'color:blue; font-weight:bold;' : ''}"><span>${i+1}. ${p[0]}</span><b>${p[1].score}</b></div>`).join('');
+            box.innerHTML = sorted.map((p,i)=> {
+                const name = p[0];
+                const score = p[1].score;
+                const lvl = p[1].power || 1; // Берем уровень из базы
+                const isMe = name === userName ? 'color:blue; font-weight:bold;' : '';
+                return `<div class="player-row" style="${isMe}">
+                            <span>${i+1}. ${name} <span class="lvl-tag">lvl:${lvl}</span></span>
+                            <b>${score.toLocaleString()} 💵</b>
+                        </div>`;
+            }).join('');
         }
 
-        // Интервал теперь еще и проверяет ваши статы в базе каждые 2 секунды
         setInterval(() => {
             listenToMyStats(); 
             if(document.getElementById('modal-chat').style.display === 'flex') loadChat();
