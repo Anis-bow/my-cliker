@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bachoi 17 Maktab</title>
+    <title>bachoi 17 maktab</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; margin: 0; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
         #ui-top { text-align: center; margin-top: 20px; z-index: 10; width: 100%; }
@@ -11,23 +11,27 @@
         #power-info { font-size: 1rem; color: #7f8c8d; margin-top: 5px; font-weight: bold; }
         #user-info { margin-top: 10px; font-size: 0.9rem; color: #3498db; cursor: pointer; text-decoration: underline; }
 
-        #game-area { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; position: relative; }
+        #game-area { flex: 1; display: flex; align-items: center; justify-content: center; width: 100%; }
         #click-btn { width: 220px; height: 220px; border-radius: 50%; border: 8px solid white; box-shadow: 0 15px 35px rgba(0,0,0,0.1); cursor: pointer; object-fit: cover; transition: transform 0.05s; }
         
-        .shake-anim { animation: shake 0.1s; }
         @keyframes shake { 0% { transform: scale(1); } 50% { transform: scale(0.92); } 100% { transform: scale(1); } }
+        .shake-anim { animation: shake 0.1s; }
 
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(4px); }
         .modal-content { background: white; width: 90%; max-width: 400px; border-radius: 25px; padding: 20px; position: relative; max-height: 80vh; display: flex; flex-direction: column; overflow-y: auto; }
-        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.8rem; cursor: pointer; color: #ccc; }
+        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.8rem; cursor: pointer; color: #ccc; z-index: 10; }
         
+        /* Сетка магазина */
         .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 10px; }
         .shop-item { background: #f8f9fa; padding: 10px; border-radius: 15px; text-align: center; border: 1px solid #eee; }
-        .shop-item img { width: 60px; height: 60px; object-fit: contain; }
-        .buy-btn { background: #27ae60; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 5px; }
+        .shop-item img { width: 60px; height: 60px; object-fit: contain; margin-bottom: 5px; }
+        .shop-item h4 { margin: 5px 0; font-size: 0.9rem; }
+        .shop-item p { margin: 0 0 10px; color: #e67e22; font-weight: bold; font-size: 0.8rem; }
+        .buy-btn { background: #27ae60; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; width: 100%; }
 
-        .player-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
-
+        .player-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; align-items: center; }
+        .lvl-badge { background: #f39c12; color: white; padding: 2px 6px; border-radius: 5px; font-size: 0.7rem; margin-left: 5px; }
+        
         nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: white; display: flex; border-top: 1px solid #eee; z-index: 50; }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; color: #adb5bd; cursor: pointer; }
         .active { color: #3498db; }
@@ -38,7 +42,7 @@
     <div id="ui-top">
         <div id="score-container"><span id="coins">0</span>💵</div>
         <div id="power-info">Сила: <span id="current-power">1</span></div>
-        <div id="user-info" onclick="changeName()">Ник: <span id="display-name">...</span></div>
+        <div id="user-info" onclick="changeName()">Ник: <span id="display-name">...</span> (изменить)</div>
     </div>
 
     <div id="game-area">
@@ -56,17 +60,27 @@
     <div id="modal-shop" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModals()">×</span>
-            <h2>🎁 ОБМЕН</h2>
+            <h2>🎁 ОБМЕН ПОДАРКОВ</h2>
             <div class="shop-grid">
                 <div class="shop-item">
                     <img src="https://cdn-icons-png.flaticon.com/512/2589/2589175.png">
-                    <h4>Сердце</h4><p>20,000</p>
-                    <button class="buy-btn" onclick="exchangeGift('Сердце', 20000)">Обмен</button>
+                    <h4>Сердечко</h4><p>20,000 💵</p>
+                    <button class="buy-btn" onclick="exchangeGift('Сердечко', 20000)">Обменять</button>
                 </div>
                 <div class="shop-item">
                     <img src="https://cdn-icons-png.flaticon.com/512/3069/3069172.png">
-                    <h4>Мишка</h4><p>20,000</p>
-                    <button class="buy-btn" onclick="exchangeGift('Мишка', 20000)">Обмен</button>
+                    <h4>Мишка</h4><p>20,000 💵</p>
+                    <button class="buy-btn" onclick="exchangeGift('Мишка', 20000)">Обменять</button>
+                </div>
+                <div class="shop-item">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3405/3405777.png">
+                    <h4>Роза</h4><p>35,000 💵</p>
+                    <button class="buy-btn" onclick="exchangeGift('Роза', 35000)">Обменять</button>
+                </div>
+                <div class="shop-item">
+                    <img src="https://cdn-icons-png.flaticon.com/512/4213/4213958.png">
+                    <h4>Подарок</h4><p>35,000 💵</p>
+                    <button class="buy-btn" onclick="exchangeGift('Подарок', 35000)">Обменять</button>
                 </div>
             </div>
         </div>
@@ -94,7 +108,7 @@
             document.getElementById('boost-label').innerText = Math.pow(2, power - 1) * 100;
         }
 
-        // ОТПРАВКА В БАЗУ
+        // Синхронизация: ОТПРАВИТЬ
         async function sync() { 
             await fetch(`${DB_URL}/players/${userName}.json`, { 
                 method: 'PUT', 
@@ -102,14 +116,14 @@
             }); 
         }
 
-        // ПОЛУЧЕНИЕ ИЗ БАЗЫ (Чтобы данные на главном экране менялись, если ты поменял их в Firebase)
-        async function fetchMyData() {
+        // Синхронизация: ПОЛУЧИТЬ (чтобы числа совпадали везде)
+        async function fetchServerData() {
             try {
                 const res = await fetch(`${DB_URL}/players/${userName}.json`);
                 const data = await res.json();
-                if (data) {
-                    // Если в базе число больше, чем в телефоне — обновляем телефон
-                    if (data.score > count) {
+                if (data && data.score !== undefined) {
+                    // Если на сервере число отличается от того что на экране - исправляем
+                    if (data.score !== count) {
                         count = data.score;
                         power = data.power || power;
                         updateUI();
@@ -144,7 +158,7 @@
             if (!tg) return;
             count -= price; updateUI(); sync();
             await fetch(`${DB_URL}/orders.json`, { method: 'POST', body: JSON.stringify({user: userName, tg: tg, gift: name, time: Date.now()}) });
-            alert("Заявка отправлена!");
+            alert("Заявка отправлена! Админ свяжется.");
         }
 
         function openModal(id) { 
@@ -153,9 +167,7 @@
             if(id === 'modal-top') loadLB(); 
         }
 
-        function closeModals() { 
-            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); 
-        }
+        function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); updateUI(); }
 
         function changeName() {
             let n = prompt("Новый ник:", userName);
@@ -168,18 +180,18 @@
             const box = document.getElementById('lb-content');
             box.innerHTML = '';
             if(!data) return;
-            const sorted = Object.entries(data).sort((a,b)=>b[1].score-a[1].score).slice(0,10);
+            const sorted = Object.entries(data).sort((a,b)=>b[1].score-a[1].score).slice(0,15);
             sorted.forEach((p, i) => {
                 box.innerHTML += `<div class="player-row" style="${p[0]===userName?'color:#3498db;font-weight:bold':''}">
-                    <span>${i+1}. ${p[0]} (LVL ${p[1].power||1})</span>
+                    <span>${i+1}. ${p[0]} <span class="lvl-badge">LVL ${p[1].power||1}</span></span>
                     <b>${p[1].score.toLocaleString()} 💵</b></div>`;
             });
         }
 
         updateUI();
-        // Каждые 3 секунды проверяем, не изменились ли наши данные в базе
-        setInterval(fetchMyData, 3000); 
-        // Каждые 5 секунд обновляем список лидеров, если окно открыто
+        // Проверяем сервер каждые 2 секунды для точности
+        setInterval(fetchServerData, 2000); 
+        // Обновляем таблицу лидеров каждые 5 сек
         setInterval(() => {
             if(document.getElementById('modal-top').style.display === 'flex') loadLB();
         }, 5000);
