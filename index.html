@@ -27,6 +27,7 @@
         .shop-item h4 { margin: 5px 0; font-size: 0.9rem; }
         .shop-item p { margin: 0 0 10px; color: #e67e22; font-weight: bold; font-size: 0.8rem; }
         .buy-btn { background: #27ae60; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; width: 100%; }
+        .buy-btn:disabled { background: #bdc3c7; cursor: not-allowed; }
 
         .player-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; align-items: center; }
         .lvl-badge { background: #f39c12; color: white; padding: 2px 6px; border-radius: 5px; font-size: 0.7rem; margin-left: 5px; }
@@ -40,7 +41,7 @@
 
     <div id="ui-top">
         <div id="score-container"><span id="coins">0</span>💵</div>
-        <div id="power-info">Сила: <span id="current-power">1</span></div>
+        <div id="power-info">Сила: <span id="current-power">1</span> / 5</div>
         <div id="user-info" onclick="changeName()">Ник: <span id="display-name">...</span> (изменить)</div>
     </div>
 
@@ -89,7 +90,7 @@
         <div class="nav-item active" id="nav-home" onclick="closeModals()">🏠<br>ГЛАВНАЯ</div>
         <div class="nav-item" id="nav-top" onclick="openModal('modal-top')">👥<br>ИГРОКИ</div>
         <div class="nav-item" id="nav-shop" onclick="openModal('modal-shop')">🎁<br>ОБМЕН</div>
-        <div class="nav-item" onclick="buyBoost()" style="color: #f39c12;">⚡<br><b id="boost-label">100</b></div>
+        <div class="nav-item" id="boost-nav-btn" onclick="buyBoost()" style="color: #f39c12;">⚡<br><b id="boost-label">100</b></div>
     </nav>
 
     <script>
@@ -100,11 +101,24 @@
         let count = parseInt(localStorage.getItem('p_coins')) || 0;
         let power = parseInt(localStorage.getItem('p_power')) || 1;
 
+        // Массив с ценами бустов
+        const boostPrices = [0, 100, 500, 1000, 1500, 2000];
+
         function updateUI() {
             document.getElementById('coins').innerText = count.toLocaleString();
             document.getElementById('current-power').innerText = power;
             document.getElementById('display-name').innerText = userName;
-            document.getElementById('boost-label').innerText = Math.pow(2, power - 1) * 100;
+            
+            const boostLabel = document.getElementById('boost-label');
+            const boostNav = document.getElementById('boost-nav-btn');
+
+            if (power >= 5) {
+                boostLabel.innerText = "MAX";
+                boostNav.style.opacity = "0.5";
+            } else {
+                boostLabel.innerText = boostPrices[power]; // Следующий уровень
+                boostNav.style.opacity = "1";
+            }
         }
 
         async function sync() { 
@@ -114,13 +128,11 @@
             }); 
         }
 
-        // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Синхронизация с сервером каждые 1.5 сек
         async function fetchServerData() {
             try {
                 const res = await fetch(`${DB_URL}/players/${userName}.json`);
                 const data = await res.json();
                 if (data && data.score !== undefined) {
-                    // Если данные на сервере изменились (например, через консоль), обновляем экран
                     if (data.score !== count) {
                         count = data.score;
                         power = data.power || power;
@@ -142,12 +154,22 @@
         };
 
         function buyBoost() {
-            let cost = Math.pow(2, power - 1) * 100;
+            if (power >= 5) {
+                alert("У тебя максимальный уровень силы!");
+                return;
+            }
+
+            let cost = boostPrices[power]; // Берем цену текущего уровня для перехода на следующий
             if (count >= cost) {
-                count -= cost; power++; updateUI();
-                localStorage.setItem('p_coins', count); localStorage.setItem('p_power', power);
+                count -= cost;
+                power++;
+                updateUI();
+                localStorage.setItem('p_coins', count);
+                localStorage.setItem('p_power', power);
                 sync();
-            } else { alert("Мало монет!"); }
+            } else {
+                alert("Мало монет! Нужно: " + cost);
+            }
         }
 
         async function exchangeGift(name, price) {
@@ -179,12 +201,7 @@
 
         function changeName() {
             let n = prompt("Новый ник:", userName);
-            if(n) { 
-                userName = n; 
-                localStorage.setItem('p_name', n); 
-                updateUI(); 
-                sync(); 
-            }
+            if(n) { userName = n; localStorage.setItem('p_name', n); updateUI(); sync(); }
         }
 
         async function loadLB() {
@@ -193,7 +210,6 @@
             const box = document.getElementById('lb-content');
             box.innerHTML = '';
             if(!data) return;
-            // Сортировка по score
             const sorted = Object.entries(data).sort((a,b)=>b[1].score-a[1].score).slice(0,15);
             sorted.forEach((p, i) => {
                 box.innerHTML += `<div class="player-row" style="${p[0]===userName?'color:#3498db;font-weight:bold':''}">
@@ -203,7 +219,6 @@
         }
 
         updateUI();
-        // Частое обновление данных для исключения разницы в числах
         setInterval(fetchServerData, 1500); 
         setInterval(() => {
             if(document.getElementById('modal-top').style.display === 'flex') loadLB();
