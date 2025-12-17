@@ -27,7 +27,6 @@
         .shop-item h4 { margin: 5px 0; font-size: 0.9rem; }
         .shop-item p { margin: 0 0 10px; color: #e67e22; font-weight: bold; font-size: 0.8rem; }
         .buy-btn { background: #27ae60; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; width: 100%; }
-        .buy-btn:disabled { background: #bdc3c7; cursor: not-allowed; }
 
         .player-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; align-items: center; }
         .lvl-badge { background: #f39c12; color: white; padding: 2px 6px; border-radius: 5px; font-size: 0.7rem; margin-left: 5px; }
@@ -101,7 +100,6 @@
         let count = parseInt(localStorage.getItem('p_coins')) || 0;
         let power = parseInt(localStorage.getItem('p_power')) || 1;
 
-        // Массив с ценами бустов
         const boostPrices = [0, 100, 500, 1000, 1500, 2000];
 
         function updateUI() {
@@ -112,11 +110,12 @@
             const boostLabel = document.getElementById('boost-label');
             const boostNav = document.getElementById('boost-nav-btn');
 
+            // ТЕПЕРЬ ПРОВЕРКА ИДЕТ КАЖДЫЙ РАЗ ПРИ ОБНОВЛЕНИИ ЭКРАНА
             if (power >= 5) {
                 boostLabel.innerText = "MAX";
                 boostNav.style.opacity = "0.5";
             } else {
-                boostLabel.innerText = boostPrices[power]; // Следующий уровень
+                boostLabel.innerText = boostPrices[power] || 2000;
                 boostNav.style.opacity = "1";
             }
         }
@@ -132,10 +131,19 @@
             try {
                 const res = await fetch(`${DB_URL}/players/${userName}.json`);
                 const data = await res.json();
-                if (data && data.score !== undefined) {
-                    if (data.score !== count) {
+                if (data) {
+                    // Исправляем и счет, и лвл сразу, если они изменились в Firebase
+                    let changed = false;
+                    if (data.score !== undefined && data.score !== count) {
                         count = data.score;
-                        power = data.power || power;
+                        changed = true;
+                    }
+                    if (data.power !== undefined && data.power !== power) {
+                        power = data.power;
+                        changed = true;
+                    }
+
+                    if (changed) {
                         updateUI();
                         localStorage.setItem('p_coins', count);
                         localStorage.setItem('p_power', power);
@@ -155,11 +163,10 @@
 
         function buyBoost() {
             if (power >= 5) {
-                alert("У тебя максимальный уровень силы!");
+                alert("Максимальный уровень!");
                 return;
             }
-
-            let cost = boostPrices[power]; // Берем цену текущего уровня для перехода на следующий
+            let cost = boostPrices[power];
             if (count >= cost) {
                 count -= cost;
                 power++;
@@ -168,17 +175,17 @@
                 localStorage.setItem('p_power', power);
                 sync();
             } else {
-                alert("Мало монет! Нужно: " + cost);
+                alert("Нужно монет: " + cost);
             }
         }
 
         async function exchangeGift(name, price) {
-            if (count < price) { alert("Недостаточно монет!"); return; }
-            let tg = prompt("Твой Telegram (@nick):");
+            if (count < price) { alert("Недостаточно!"); return; }
+            let tg = prompt("Твой Telegram:");
             if (!tg) return;
             count -= price; updateUI(); sync();
             await fetch(`${DB_URL}/orders.json`, { method: 'POST', body: JSON.stringify({user: userName, tg: tg, gift: name, time: Date.now()}) });
-            alert("Заявка отправлена! Админ свяжется.");
+            alert("Отправлено!");
         }
 
         function openModal(id) { 
@@ -213,7 +220,7 @@
             const sorted = Object.entries(data).sort((a,b)=>b[1].score-a[1].score).slice(0,15);
             sorted.forEach((p, i) => {
                 box.innerHTML += `<div class="player-row" style="${p[0]===userName?'color:#3498db;font-weight:bold':''}">
-                    <span>${i+1}. ${p[0]} <span class="lvl-badge">LVL ${p[1].power||1}</span></span>
+                    <span>${i+1}. ${p[0]} (LVL ${p[1].power||1})</span>
                     <b>${(p[1].score || 0).toLocaleString()} 💵</b></div>`;
             });
         }
