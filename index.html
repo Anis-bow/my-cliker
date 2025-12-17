@@ -15,14 +15,18 @@
         #click-btn { width: 220px; height: 220px; border-radius: 50%; border: 8px solid white; box-shadow: 0 15px 35px rgba(0,0,0,0.1); cursor: pointer; object-fit: cover; transition: transform 0.05s; }
         
         .shake-anim { animation: shake 0.1s; }
-        @keyframes shake { 0% { transform: scale(1); } 50% { transform: scale(0.95); } 100% { transform: scale(1); } }
+        @keyframes shake { 0% { transform: scale(1); } 50% { transform: scale(0.92); } 100% { transform: scale(1); } }
 
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(4px); }
         .modal-content { background: white; width: 90%; max-width: 400px; border-radius: 25px; padding: 20px; position: relative; max-height: 80vh; display: flex; flex-direction: column; overflow-y: auto; }
         .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.8rem; cursor: pointer; color: #ccc; }
         
-        .player-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; align-items: center; }
-        .lvl-badge { background: #f39c12; color: white; padding: 2px 6px; border-radius: 5px; font-size: 0.7rem; margin-left: 5px; }
+        .shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 10px; }
+        .shop-item { background: #f8f9fa; padding: 10px; border-radius: 15px; text-align: center; border: 1px solid #eee; }
+        .shop-item img { width: 60px; height: 60px; object-fit: contain; }
+        .buy-btn { background: #27ae60; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 5px; }
+
+        .player-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
 
         nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: white; display: flex; border-top: 1px solid #eee; z-index: 50; }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; color: #adb5bd; cursor: pointer; }
@@ -38,26 +42,45 @@
     </div>
 
     <div id="game-area">
-        <img id="click-btn" src="gerb.png" alt="Pet">
+        <img id="click-btn" src="gerb.png" alt="Tap">
     </div>
 
     <div id="modal-top" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModals()">×</span>
-            <h2>👥 ИГРОКИ</h2>
+            <h2>👥 ТОП ИГРОКОВ</h2>
             <div id="lb-content">Загрузка...</div>
+        </div>
+    </div>
+
+    <div id="modal-shop" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModals()">×</span>
+            <h2>🎁 ОБМЕН</h2>
+            <div class="shop-grid">
+                <div class="shop-item">
+                    <img src="https://cdn-icons-png.flaticon.com/512/2589/2589175.png">
+                    <h4>Сердце</h4><p>20,000</p>
+                    <button class="buy-btn" onclick="exchangeGift('Сердце', 20000)">Обмен</button>
+                </div>
+                <div class="shop-item">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3069/3069172.png">
+                    <h4>Мишка</h4><p>20,000</p>
+                    <button class="buy-btn" onclick="exchangeGift('Мишка', 20000)">Обмен</button>
+                </div>
+            </div>
         </div>
     </div>
 
     <nav>
         <div class="nav-item active" onclick="closeModals()">🏠<br>ГЛАВНАЯ</div>
         <div class="nav-item" onclick="openModal('modal-top')">👥<br>ИГРОКИ</div>
+        <div class="nav-item" onclick="openModal('modal-shop')">🎁<br>ОБМЕН</div>
         <div class="nav-item" onclick="buyBoost()" style="color: #f39c12;">⚡<br><b id="boost-label">100</b></div>
     </nav>
 
     <script>
         const DB_URL = "https://clikercomee-default-rtdb.firebaseio.com"; 
-        
         let userName = localStorage.getItem('p_name') || prompt("Твой ник:") || "User" + Math.floor(Math.random()*100);
         localStorage.setItem('p_name', userName);
         
@@ -71,12 +94,29 @@
             document.getElementById('boost-label').innerText = Math.pow(2, power - 1) * 100;
         }
 
+        // ОТПРАВКА В БАЗУ
         async function sync() { 
+            await fetch(`${DB_URL}/players/${userName}.json`, { 
+                method: 'PUT', 
+                body: JSON.stringify({ score: count, power: power }) 
+            }); 
+        }
+
+        // ПОЛУЧЕНИЕ ИЗ БАЗЫ (Чтобы данные на главном экране менялись, если ты поменял их в Firebase)
+        async function fetchMyData() {
             try {
-                await fetch(`${DB_URL}/players/${userName}.json`, { 
-                    method: 'PUT', 
-                    body: JSON.stringify({ score: count, power: power }) 
-                }); 
+                const res = await fetch(`${DB_URL}/players/${userName}.json`);
+                const data = await res.json();
+                if (data) {
+                    // Если в базе число больше, чем в телефоне — обновляем телефон
+                    if (data.score > count) {
+                        count = data.score;
+                        power = data.power || power;
+                        updateUI();
+                        localStorage.setItem('p_coins', count);
+                        localStorage.setItem('p_power', power);
+                    }
+                }
             } catch(e) {}
         }
 
@@ -84,34 +124,37 @@
             count += power;
             updateUI();
             localStorage.setItem('p_coins', count);
-            
             const btn = document.getElementById('click-btn');
-            btn.classList.remove('shake-anim'); 
-            void btn.offsetWidth; 
-            btn.classList.add('shake-anim');
+            btn.classList.remove('shake-anim'); void btn.offsetWidth; btn.classList.add('shake-anim');
             sync();
         };
 
         function buyBoost() {
             let cost = Math.pow(2, power - 1) * 100;
             if (count >= cost) {
-                count -= cost;
-                power++;
-                updateUI();
-                localStorage.setItem('p_coins', count);
-                localStorage.setItem('p_power', power);
+                count -= cost; power++; updateUI();
+                localStorage.setItem('p_coins', count); localStorage.setItem('p_power', power);
                 sync();
             } else { alert("Мало монет!"); }
         }
 
+        async function exchangeGift(name, price) {
+            if (count < price) { alert("Недостаточно монет!"); return; }
+            let tg = prompt("Твой Telegram (@nick):");
+            if (!tg) return;
+            count -= price; updateUI(); sync();
+            await fetch(`${DB_URL}/orders.json`, { method: 'POST', body: JSON.stringify({user: userName, tg: tg, gift: name, time: Date.now()}) });
+            alert("Заявка отправлена!");
+        }
+
         function openModal(id) { 
+            closeModals();
             document.getElementById(id).style.display = 'flex'; 
             if(id === 'modal-top') loadLB(); 
         }
 
         function closeModals() { 
             document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); 
-            updateUI();
         }
 
         function changeName() {
@@ -120,25 +163,26 @@
         }
 
         async function loadLB() {
-            try {
-                const res = await fetch(`${DB_URL}/players.json`);
-                const data = await res.json();
-                const box = document.getElementById('lb-content');
-                box.innerHTML = '';
-                if(!data) return;
-                const sorted = Object.entries(data).sort((a,b)=>b[1].score-a[1].score).slice(0,10);
-                sorted.forEach((p, i) => {
-                    box.innerHTML += `<div class="player-row" style="${p[0]===userName?'color:blue':''}">
-                        <span>${i+1}. ${p[0]} <span class="lvl-badge">LVL ${p[1].power||1}</span></span>
-                        <b>${p[1].score.toLocaleString()} 💵</b></div>`;
-                });
-            } catch(e) {}
+            const res = await fetch(`${DB_URL}/players.json`);
+            const data = await res.json();
+            const box = document.getElementById('lb-content');
+            box.innerHTML = '';
+            if(!data) return;
+            const sorted = Object.entries(data).sort((a,b)=>b[1].score-a[1].score).slice(0,10);
+            sorted.forEach((p, i) => {
+                box.innerHTML += `<div class="player-row" style="${p[0]===userName?'color:#3498db;font-weight:bold':''}">
+                    <span>${i+1}. ${p[0]} (LVL ${p[1].power||1})</span>
+                    <b>${p[1].score.toLocaleString()} 💵</b></div>`;
+            });
         }
 
         updateUI();
+        // Каждые 3 секунды проверяем, не изменились ли наши данные в базе
+        setInterval(fetchMyData, 3000); 
+        // Каждые 5 секунд обновляем список лидеров, если окно открыто
         setInterval(() => {
             if(document.getElementById('modal-top').style.display === 'flex') loadLB();
-        }, 3000);
+        }, 5000);
     </script>
 </body>
 </html>
