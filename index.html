@@ -21,7 +21,7 @@
         #heat-bar { width: 0%; height: 100%; background: linear-gradient(90deg, var(--blue), var(--red)); transition: width 0.1s; }
 
         #main-stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
-        #combo-info { font-size: 1.5rem; font-weight: bold; color: var(--gold); height: 30px; margin-bottom: 10px; }
+        #combo-info { font-size: 1.5rem; font-weight: bold; color: var(--gold); height: 30px; margin-bottom: 10px; text-transform: uppercase; }
         
         #gerb { 
             width: 260px; height: 260px; border-radius: 50%; border: 6px solid #1e272e;
@@ -51,7 +51,7 @@
 <body oncontextmenu="return false;">
 
     <div id="header">
-        <div id="score">0</div>
+        <div id="score">...</div>
         <div id="user-tag">ЗАГРУЗКА...</div>
         <div id="heat-wrap"><div id="heat-bar"></div></div>
     </div>
@@ -80,19 +80,19 @@
         <div class="content-box">
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
                 <div style="background:#1e272e; padding:15px; border-radius:15px; text-align:center;">
-                    <img src="i (5).webp" style="width:60px; height:60px;">
+                    <img src="i (5).webp" style="width:60px; height:60px; object-fit: contain;">
                     <div>Мишка</div><button onclick="buy('Мишка', 25000)" style="width:100%; margin-top:10px; background:var(--blue); color:white; border:none; padding:8px; border-radius:8px;">25k</button>
                 </div>
                 <div style="background:#1e272e; padding:15px; border-radius:15px; text-align:center;">
-                    <img src="538e404bde2a5b9680bf486cdc6ea4b4.jpg" style="width:60px; height:60px;">
+                    <img src="538e404bde2a5b9680bf486cdc6ea4b4.jpg" style="width:60px; height:60px; object-fit: contain;">
                     <div>Роза</div><button onclick="buy('Роза', 30000)" style="width:100%; margin-top:10px; background:var(--blue); color:white; border:none; padding:8px; border-radius:8px;">30k</button>
                 </div>
                 <div style="background:#1e272e; padding:15px; border-radius:15px; text-align:center;">
-                    <img src="png-transparent-emojipedia-heart-ribbon-emoticon-emoji-love-ribbon-heart.png" style="width:60px; height:60px;">
+                    <img src="png-transparent-emojipedia-heart-ribbon-emoticon-emoji-love-ribbon-heart.png" style="width:60px; height:60px; object-fit: contain;">
                     <div>Сердце</div><button onclick="buy('Сердце', 20000)" style="width:100%; margin-top:10px; background:var(--blue); color:white; border:none; padding:8px; border-radius:8px;">20k</button>
                 </div>
                 <div style="background:#1e272e; padding:15px; border-radius:15px; text-align:center;">
-                    <img src="default.png" style="width:60px; height:60px;">
+                    <img src="default.png" style="width:60px; height:60px; object-fit: contain;">
                     <div>Подарок</div><button onclick="buy('Подарок', 50000)" style="width:100%; margin-top:10px; background:var(--blue); color:white; border:none; padding:8px; border-radius:8px;">50k</button>
                 </div>
             </div>
@@ -110,31 +110,46 @@
         const API = "https://clikercomee-default-rtdb.firebaseio.com";
         let nick = localStorage.getItem('player_nick');
         if (!nick) {
-            nick = prompt("ВВЕДИТЕ НИК:");
+            nick = prompt("ВВЕДИТЕ НИК ДЛЯ ИГРЫ:");
             if (!nick) nick = "User" + Math.floor(Math.random()*999);
             localStorage.setItem('player_nick', nick);
         }
 
         let score = 0, heat = 0, combo = 0, mult = 1, isLocked = false;
+        let lastClickTime = Date.now();
 
-        function update() {
+        // 1. ЗАГРУЗКА ДАННЫХ ПРИ ВХОДЕ
+        async function initGame() {
+            try {
+                const res = await fetch(`${API}/players/${nick}.json`);
+                const data = await res.json();
+                if (data && data.s !== undefined) {
+                    score = data.s;
+                }
+            } catch(e) { console.log("New user"); }
+            updateUI();
+        }
+
+        function updateUI() {
             document.getElementById('score').innerText = Math.floor(score).toLocaleString();
             document.getElementById('user-tag').innerText = nick.toUpperCase();
             document.getElementById('heat-bar').style.width = heat + "%";
-            document.getElementById('combo-info').innerText = combo > 5 ? `COMBO X${mult}` : "";
+            document.getElementById('combo-info').innerText = combo > 5 ? `🔥 COMBO X${mult}` : "";
         }
 
         function clicker(e) {
             if (isLocked) return;
 
-            heat += 2; // 50 кликов до 100%
+            lastClickTime = Date.now();
+            heat += 2; // Ровно 50 кликов до перегрева
+
             if (heat >= 100) {
                 isLocked = true; heat = 100; combo = 0; mult = 1;
                 document.getElementById('gerb').classList.add('locked');
                 setTimeout(() => { 
                     isLocked = false; heat = 0; 
                     document.getElementById('gerb').classList.remove('locked');
-                    update();
+                    updateUI();
                 }, 4000);
             }
 
@@ -151,8 +166,17 @@
             p.style.color = mult > 1 ? "var(--gold)" : "white";
             document.body.appendChild(p);
             setTimeout(() => p.remove(), 700);
-            update();
+            updateUI();
         }
+
+        // 2. СБРОС КОМБО ПРИ БЕЗДЕЙСТВИИ
+        setInterval(() => {
+            if (Date.now() - lastClickTime > 1500 && combo > 0) {
+                combo = 0;
+                mult = 1;
+                updateUI();
+            }
+        }, 500);
 
         async function send() {
             const i = document.getElementById('msg-input');
@@ -184,12 +208,12 @@
 
         async function buy(name, cost) {
             if (score < cost) { alert("Мало монет!"); return; }
-            let tg = prompt("Ваш Телеграм:");
+            let tg = prompt("Ваш Телеграм для связи:");
             if (!tg) return;
             score -= cost;
-            await fetch(`${API}/orders.json`, { method: 'POST', body: JSON.stringify({u: nick, item: name, tg: tg}) });
-            alert("Запрос отправлен!");
-            update();
+            await fetch(`${API}/orders.json`, { method: 'POST', body: JSON.stringify({u: nick, item: name, tg: tg, t: Date.now()}) });
+            alert("Заявка принята!");
+            updateUI();
         }
 
         function show(id) {
@@ -206,13 +230,17 @@
             document.getElementById('btn-home').classList.add('active');
         }
 
-        setInterval(() => { if(heat > 0 && !isLocked) { heat -= 1; update(); } }, 300);
-        setInterval(async () => { await fetch(`${API}/players/${nick}.json`, { method: 'PUT', body: JSON.stringify({s: score}) }); }, 5000);
+        // Охлаждение и Сохранение
+        setInterval(() => { if(heat > 0 && !isLocked) { heat -= 1; updateUI(); } }, 300);
+        setInterval(async () => { 
+            if (nick) await fetch(`${API}/players/${nick}.json`, { method: 'PUT', body: JSON.stringify({s: score}) }); 
+        }, 5000);
 
         const target = document.getElementById('gerb');
         target.addEventListener('touchstart', (e) => { e.preventDefault(); clicker(e); });
         target.addEventListener('mousedown', (e) => clicker(e));
-        update();
+
+        initGame(); // Запуск загрузки данных
     </script>
 </body>
 </html>
